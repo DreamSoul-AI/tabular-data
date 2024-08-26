@@ -1,6 +1,4 @@
-import anytree
 import numpy as np
-import pandas as pd
 import os
 import torch
 from torch.utils.data import Dataset
@@ -15,8 +13,8 @@ class Diabetes(Dataset):
         self.split = split
         if not check_exists(self.processed_folder):
             self.process()
-        self.id, self.data, self.target = load(os.path.join(self.processed_folder, '{}.pt'.format(self.split)))
-        self.target_size = load(os.path.join(self.processed_folder, 'meta.pt'))
+        self.id, self.data, self.target = load(os.path.join(self.processed_folder, self.split))
+        self.target_size = load(os.path.join(self.processed_folder, 'meta'))
 
     def __getitem__(self, index):
         id, data, target = torch.tensor(self.id[index]), torch.tensor(self.data[index]), torch.tensor(
@@ -35,36 +33,13 @@ class Diabetes(Dataset):
     def raw_folder(self):
         return os.path.join(self.root, 'raw')
 
-    '''
-        def process(self):
-            makedir_exist_ok(self.raw_folder)
-
-            csv_path = os.path.join(self.raw_folder, 'diabetes.csv')
-            data_df = pd.read_csv(csv_path)
-
-            X = data_df.drop('Outcome', axis=1).values.astype(np.float32)
-            y = data_df['Outcome'].values.astype(np.float32).reshape(-1, 1)
-
-            perm = np.random.permutation(len(X))
-            X, y = X[perm], y[perm]
-            split_idx = int(len(X) * 0.8)
-            train_data, test_data = X[:split_idx], X[split_idx:]
-            train_target, test_target = y[:split_idx], y[split_idx:]
-            train_id, test_id = np.arange(len(train_data)).astype(np.int64), np.arange(len(test_data)).astype(np.int64)
-
-            save((train_id, train_data, train_target), os.path.join(self.processed_folder, 'train.pt'))
-            save((test_id, test_data, test_target), os.path.join(self.processed_folder, 'test.pt'))
-            save(1, os.path.join(self.processed_folder, 'meta.pt'))
-            return
-    '''
-
     def process(self):
         if not check_exists(self.raw_folder):
             self.download()
         train_set, test_set, meta = self.make_data()
-        save(train_set, os.path.join(self.processed_folder, 'train.pt'))
-        save(test_set, os.path.join(self.processed_folder, 'test.pt'))
-        save(meta, os.path.join(self.processed_folder, 'meta.pt'))
+        save(train_set, os.path.join(self.processed_folder, 'train'))
+        save(test_set, os.path.join(self.processed_folder, 'test'))
+        save(meta, os.path.join(self.processed_folder, 'meta'))
         return
 
     def download(self):
@@ -81,7 +56,7 @@ class Diabetes(Dataset):
         X, y = load_diabetes(return_X_y=True)
         perm = np.random.permutation(len(X))
         X, y = X[perm], y[perm].reshape(-1, 1)
-        split_idx = int(X.shape[0] * 0.8)
+        split_idx = int(X.shape[0] * 0.9)
         train_data, test_data = X[:split_idx].astype(np.float32), X[split_idx:].astype(np.float32)
         train_target, test_target = y[:split_idx].astype(np.float32), y[split_idx:].astype(np.float32)
         train_id, test_id = np.arange(len(train_data)).astype(np.int64), np.arange(len(test_data)).astype(np.int64)
