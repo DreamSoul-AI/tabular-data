@@ -11,7 +11,16 @@ def make_metric(split, **kwargs):
         best_direction = 'down'
         best_metric_name = 'RMSE'
         for k in metric_name:
-            metric_name[k].extend(['Loss', 'RMSE'])
+            if k == 'train':
+                metric_name[k].extend(['Loss'])
+            elif k == 'test':
+                metric_name[k].extend(['Loss', 'RMSE'])
+    elif data_name in ['Iris']:
+        best = -float('inf')
+        best_direction = 'up'
+        best_metric_name = 'Accuracy'
+        for k in metric_name:
+            metric_name[k].extend(['Loss', 'Accuracy'])
     else:
         raise ValueError('Not valid data name')
     metric = Metric(metric_name, best, best_direction, best_metric_name)
@@ -23,8 +32,11 @@ def Accuracy(output, target, topk=1):
         if target.dtype != torch.int64:
             target = (target.topk(1, -1, True, True)[1]).view(-1)
         batch_size = torch.numel(target)
-        pred_k = output.topk(topk, -1, True, True)[1]
-        correct_k = pred_k.eq(target.unsqueeze(-1).expand_as(pred_k)).float().sum()
+        if output.dtype != torch.int64:
+            pred_k = output.topk(topk, -1, True, True)[1]
+            correct_k = pred_k.eq(target.unsqueeze(-1).expand_as(pred_k)).float().sum()
+        else:
+            correct_k = output.eq(target).float().sum()
         acc = (correct_k * (100.0 / batch_size)).item()
     return acc
 

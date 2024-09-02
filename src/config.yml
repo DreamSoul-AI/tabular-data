@@ -1,8 +1,8 @@
 ---
 # control
 control:
-  data_name: Diabetes
-  model_name: linear
+  data_name: Iris
+  model_name: gb
 # experiment
 pin_memory: True
 num_workers: 0

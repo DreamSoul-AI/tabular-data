@@ -7,8 +7,13 @@ from transformers import get_linear_schedule_with_warmup
 
 
 def make_model(model_cfg):
-    core = eval('model.{}(model_cfg)'.format(model_cfg['model_name']))
-    base = model.base(core, model_cfg['stats'])
+    if model_cfg['model_name'] in ['linear', 'mlp', 'kan']:
+        core = eval('model.{}(model_cfg)'.format(model_cfg['model_name']))
+        base = model.base(core, model_cfg['stats'], model_cfg['task_mode'])
+    elif model_cfg['model_name'] in ['svm', 'rf', 'gb', 'gp']:
+        base = model.sk(model_cfg['model_name'], model_cfg['stats'], model_cfg['task_mode'])
+    else:
+        raise ValueError('Unknown model: {}'.format(model_cfg['model_name']))
     return base
 
 
@@ -23,7 +28,10 @@ def make_loss(output, input, **args):
 def loss_fn(output, target, reduction='mean', mode='classification'):
     if mode == 'classification':
         if target.dtype == torch.int64:
-            loss = F.cross_entropy(output, target, reduction=reduction)
+            if output.dtype == torch.int64:
+                loss = output.eq(target).float().mean()
+            else:
+                loss = F.cross_entropy(output, target, reduction=reduction)
         else:
             loss = kld_loss(output, target, reduction=reduction)
     elif mode == 'regression':

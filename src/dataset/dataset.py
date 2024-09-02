@@ -13,7 +13,7 @@ def make_dataset(data_name, verbose=True):
     if verbose:
         print('fetching data {}...'.format(data_name))
     root = os.path.join('data', data_name)
-    if data_name in ['Diabetes', 'FashionMNIST']:
+    if data_name in ['Diabetes', 'Iris']:
         dataset_['train'] = eval('dataset.{}(root=root, split="train")'.format(data_name))
         dataset_['test'] = eval('dataset.{}(root=root, split="test")'.format(data_name))
     else:
@@ -82,4 +82,10 @@ def process_dataset(dataset):
         cfg['num_steps'] = int(np.ceil(len(processed_dataset['train']) / cfg['batch_size'])) * cfg['num_epochs']
         cfg['eval_period'] = int(np.ceil(len(processed_dataset['train']) / cfg['batch_size']))
         cfg[cfg['tag']]['optimizer']['num_steps'] = cfg['num_steps']
+    if cfg['data_name'] in ['Diabetes']:
+        cfg['model']['task_mode'] = 'regression'
+    elif cfg['data_name'] in ['Iris']:
+        cfg['model']['task_mode'] = 'classification'
+    else:
+        raise ValueError('Not valid dataset name')
     return processed_dataset
