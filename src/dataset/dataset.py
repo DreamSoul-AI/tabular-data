@@ -82,6 +82,8 @@ def process_dataset(dataset):
         cfg['num_steps'] = int(np.ceil(len(processed_dataset['train']) / cfg['batch_size'])) * cfg['num_epochs']
         cfg['eval_period'] = int(np.ceil(len(processed_dataset['train']) / cfg['batch_size']))
         cfg[cfg['tag']]['optimizer']['num_steps'] = cfg['num_steps']
+    if cfg['model_name'] in ['svm', 'rf', 'gb', 'gp']:
+        cfg['num_steps'] = None
     if cfg['data_name'] in ['Diabetes']:
         cfg['model']['task_mode'] = 'regression'
     elif cfg['data_name'] in ['Iris']:
