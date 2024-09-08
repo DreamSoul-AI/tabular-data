@@ -47,9 +47,16 @@ def main():
     filename = '{}_{}'.format(run, mode)
     if mode == 'base':
         script_name = [['{}_model.py'.format(run)]]
-        data_name = ['Brick']
-        eval_mode = ['0.9-holdout']
-        model_name = ['linear', 'mlp']
+        data_name = ['Diabetes', 'Iris']
+        eval_mode = ['0.9-holdout', '3-fold', 'loo']
+        model_name = ['linear', 'mlp', 'kan']
+        control_name = [[data_name, eval_mode, model_name]]
+        controls = make_controls(script_name, init_seeds, num_experiments, resume_mode, control_name)
+    elif mode == 'sk':
+        script_name = [['{}_sk_model.py'.format(run)]]
+        data_name = ['Diabetes', 'Iris']
+        eval_mode = ['0.9-holdout', '3-fold', 'loo']
+        model_name = ['svm', 'rf', 'gb', 'gp']
         control_name = [[data_name, eval_mode, model_name]]
         controls = make_controls(script_name, init_seeds, num_experiments, resume_mode, control_name)
     else:
