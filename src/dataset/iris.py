@@ -9,12 +9,11 @@ from .utils import make_classes_counts
 class Iris(Dataset):
     data_name = 'Iris'
 
-    def __init__(self, root, split):
+    def __init__(self, root):
         self.root = os.path.expanduser(root)
-        self.split = split
         if not check_exists(self.processed_folder):
             self.process()
-        self.id, self.data, self.target = load(os.path.join(self.processed_folder, self.split))
+        self.id, self.data, self.target = load(os.path.join(self.processed_folder, 'data'))
         self.classes_counts = make_classes_counts(self.target)
         self.classes_to_labels, self.target_size = load(os.path.join(self.processed_folder, 'meta'))
 
@@ -38,9 +37,8 @@ class Iris(Dataset):
     def process(self):
         if not check_exists(self.raw_folder):
             self.download()
-        train_set, test_set, meta = self.make_data()
-        save(train_set, os.path.join(self.processed_folder, 'train'))
-        save(test_set, os.path.join(self.processed_folder, 'test'))
+        data_set, meta = self.make_data()
+        save(data_set, os.path.join(self.processed_folder, 'data'))
         save(meta, os.path.join(self.processed_folder, 'meta'))
         return
 
@@ -49,8 +47,7 @@ class Iris(Dataset):
         return
 
     def __repr__(self):
-        fmt_str = 'Dataset {}\nSize: {}\nRoot: {}\nSplit: {}'.format(self.__class__.__name__, self.__len__(), self.root,
-                                                                     self.split)
+        fmt_str = 'Dataset {}\nSize: {}\nRoot: {}'.format(self.__class__.__name__, self.__len__(), self.root)
         return fmt_str
 
     def make_data(self):
@@ -58,12 +55,11 @@ class Iris(Dataset):
         X, y = load_iris(return_X_y=True)
         perm = np.random.permutation(len(X))
         X, y = X[perm], y[perm]
-        split_idx = int(X.shape[0] * 0.9)
-        train_data, test_data = X[:split_idx].astype(np.float32), X[split_idx:].astype(np.float32)
-        train_target, test_target = y[:split_idx].astype(np.int64), y[split_idx:].astype(np.int64)
-        train_id, test_id = np.arange(len(train_data)).astype(np.int64), np.arange(len(test_data)).astype(np.int64)
+        data = X.astype(np.float32)
+        target = y.astype(np.int64)
+        id = np.arange(len(data)).astype(np.int64)
+        data_set = (id, data, target)
         classes = ['Iris-Setosa', 'Iris-Versicolour', 'Iris-Virginica']
         classes_to_labels = {classes[i]: i for i in range(len(classes))}
         target_size = len(classes)
-        return (train_id, train_data, train_target), (test_id, test_data, test_target), (
-            classes_to_labels, target_size)
+        return data_set, (classes_to_labels, target_size)

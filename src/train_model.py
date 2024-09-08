@@ -37,48 +37,49 @@ def runExperiment():
     torch.cuda.manual_seed(cfg['seed'])
     cfg['path'] = os.path.join('output', 'exp')
     cfg['tag_path'] = os.path.join(cfg['path'], cfg['tag'])
-    cfg['checkpoint_path'] = os.path.join(cfg['tag_path'], 'checkpoint')
-    cfg['best_path'] = os.path.join(cfg['tag_path'], 'best')
-    cfg['logger_path'] = os.path.join('output', 'logger', 'train', 'runs', cfg['tag'])
-    dataset = make_dataset(cfg['data_name'])
-    dataset = process_dataset(dataset)
-    model = make_model(cfg['model'])
-    result = resume(cfg['checkpoint_path'], resume_mode=cfg['resume_mode'])
-    if result is None:
-        cfg['step'] = 0
-        model = model.to(cfg['device'])
-        optimizer = make_optimizer(model.parameters(), cfg[cfg['tag']]['optimizer'])
-        scheduler = make_scheduler(optimizer, cfg[cfg['tag']]['optimizer'])
-        logger = make_logger(cfg['logger_path'], data_name=cfg['data_name'])
-    else:
-        cfg['step'] = result['cfg']['step']
-        model = model.to(cfg['device'])
-        optimizer = make_optimizer(model.parameters(), cfg[cfg['tag']]['optimizer'])
-        scheduler = make_scheduler(optimizer, cfg[cfg['tag']]['optimizer'])
-        logger = make_logger(cfg['logger_path'], data_name=cfg['data_name'])
-        model.load_state_dict(result['model'])
-        optimizer.load_state_dict(result['optimizer'])
-        scheduler.load_state_dict(result['scheduler'])
-        logger.load_state_dict(result['logger'])
-        logger.reset()
-    data_loader = make_data_loader(dataset, cfg[cfg['tag']]['optimizer']['batch_size'], cfg['num_steps'],
-                                   cfg['step'], cfg['step_period'], cfg['pin_memory'], cfg['num_workers'],
-                                   cfg['collate_mode'], cfg['seed'])
-    data_iterator = enumerate(data_loader['train'])
-    while cfg['step'] < cfg['num_steps']:
-        train(data_iterator, model, optimizer, scheduler, logger)
-        test(data_loader['test'], model, logger)
-        result = {'cfg': cfg, 'model': model.state_dict(),
-                  'optimizer': optimizer.state_dict(), 'scheduler': scheduler.state_dict(),
-                  'logger': logger.state_dict()}
-        check(result, cfg['checkpoint_path'])
-        if logger.compare('test'):
-            shutil.copytree(cfg['checkpoint_path'], cfg['best_path'], dirs_exist_ok=True)
-        logger.reset()
+    dataset = make_dataset(cfg['data_name'], cfg['eval_mode'])
+    for i in range(len(dataset)):
+        cfg['checkpoint_path'] = os.path.join(cfg['tag_path'], 'checkpoint', str(i))
+        cfg['best_path'] = os.path.join(cfg['tag_path'], 'best', str(i))
+        cfg['logger_path'] = os.path.join('output', 'logger', 'train', 'runs', cfg['tag'], str(i))
+        dataset_i = process_dataset(dataset[i])
+        model = make_model(cfg['model'], i)
+        result = resume(cfg['checkpoint_path'], resume_mode=cfg['resume_mode'])
+        if result is None:
+            cfg['step'] = 0
+            model = model.to(cfg['device'])
+            optimizer = make_optimizer(model.parameters(), cfg[cfg['tag']]['optimizer'])
+            scheduler = make_scheduler(optimizer, cfg[cfg['tag']]['optimizer'])
+            logger = make_logger(cfg['logger_path'], data_name=cfg['data_name'])
+        else:
+            cfg['step'] = result['cfg']['step']
+            model = model.to(cfg['device'])
+            optimizer = make_optimizer(model.parameters(), cfg[cfg['tag']]['optimizer'])
+            scheduler = make_scheduler(optimizer, cfg[cfg['tag']]['optimizer'])
+            logger = make_logger(cfg['logger_path'], data_name=cfg['data_name'])
+            model.load_state_dict(result['model'])
+            optimizer.load_state_dict(result['optimizer'])
+            scheduler.load_state_dict(result['scheduler'])
+            logger.load_state_dict(result['logger'])
+            logger.reset()
+        data_loader = make_data_loader(dataset_i, cfg[cfg['tag']]['optimizer']['batch_size'], cfg['num_steps'],
+                                       cfg['step'], cfg['step_period'], cfg['pin_memory'], cfg['num_workers'],
+                                       cfg['collate_mode'], cfg['seed'])
+        data_iterator = enumerate(data_loader['train'])
+        while cfg['step'] < cfg['num_steps']:
+            train(data_iterator, model, optimizer, scheduler, logger, i)
+            test(data_loader['test'], model, logger, i)
+            result = {'cfg': cfg, 'model': model.state_dict(),
+                      'optimizer': optimizer.state_dict(), 'scheduler': scheduler.state_dict(),
+                      'logger': logger.state_dict()}
+            check(result, cfg['checkpoint_path'])
+            if logger.compare('test'):
+                shutil.copytree(cfg['checkpoint_path'], cfg['best_path'], dirs_exist_ok=True)
+            logger.reset()
     return
 
 
-def train(data_loader, model, optimizer, scheduler, logger):
+def train(data_loader, model, optimizer, scheduler, logger, index):
     model.train(True)
     start_time = time.time()
     with logger.profiler:
@@ -104,7 +105,7 @@ def train(data_loader, model, optimizer, scheduler, logger):
                     seconds=round((cfg['eval_period'] - (idx + 1)) * step_time))
                 exp_finished_time = datetime.timedelta(
                     seconds=round((cfg['num_steps'] - (cfg['step'] + 1)) * step_time))
-                info = {'info': ['Model: {}'.format(cfg['tag']),
+                info = {'info': ['Model: {} ({})'.format(cfg['tag'], index),
                                  'Train Epoch: {}({:.0f}%)'.format((cfg['step'] // cfg['eval_period']) + 1,
                                                                    100. * idx / cfg['eval_period']),
                                  'Learning rate: {:.6f}'.format(lr),
@@ -119,7 +120,7 @@ def train(data_loader, model, optimizer, scheduler, logger):
     return
 
 
-def test(data_loader, model, logger):
+def test(data_loader, model, logger, index):
     with torch.no_grad():
         model.train(False)
         for i, input in enumerate(data_loader):
@@ -131,7 +132,7 @@ def test(data_loader, model, logger):
             logger.add('test', input, output)
         evaluation = logger.evaluate('test', 'full')
         logger.append(evaluation, 'test', input_size)
-        info = {'info': ['Model: {}'.format(cfg['tag']),
+        info = {'info': ['Model: {} ({})'.format(cfg['tag'], index),
                          'Test Epoch: {}({:.0f}%)'.format(cfg['step'] // cfg['eval_period'], 100.)]}
         logger.append(info, 'test')
         print(logger.write('test'))

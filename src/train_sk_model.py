@@ -35,37 +35,38 @@ def runExperiment():
     torch.cuda.manual_seed(cfg['seed'])
     cfg['path'] = os.path.join('output', 'exp')
     cfg['tag_path'] = os.path.join(cfg['path'], cfg['tag'])
-    dataset = make_dataset(cfg['data_name'])
-    cfg['checkpoint_path'] = os.path.join(cfg['tag_path'], 'checkpoint')
-    cfg['best_path'] = os.path.join(cfg['tag_path'], 'best')
-    cfg['logger_path'] = os.path.join('output', 'logger', 'train', 'runs', cfg['tag'])
-    dataset_i = process_dataset(dataset)
-    model = make_model(cfg['model'])
-    result = resume(cfg['checkpoint_path'], resume_mode=cfg['resume_mode'])
-    if result is None:
-        cfg['step'] = 0
-        logger = make_logger(cfg['logger_path'], data_name=cfg['data_name'])
-    else:
-        cfg['step'] = result['cfg']['step']
-        logger = make_logger(cfg['logger_path'], data_name=cfg['data_name'])
-        model.load_state_dict(result['model'])
-        logger.load_state_dict(result['logger'])
+    dataset = make_dataset(cfg['data_name'], cfg['eval_mode'])
+    for i in range(len(dataset)):
+        cfg['checkpoint_path'] = os.path.join(cfg['tag_path'], 'checkpoint', str(i))
+        cfg['best_path'] = os.path.join(cfg['tag_path'], 'best', str(i))
+        cfg['logger_path'] = os.path.join('output', 'logger', 'train', 'runs', cfg['tag'], str(i))
+        dataset_i = process_dataset(dataset[i])
+        model = make_model(cfg['model'], i)
+        result = resume(cfg['checkpoint_path'], resume_mode=cfg['resume_mode'])
+        if result is None:
+            cfg['step'] = 0
+            logger = make_logger(cfg['logger_path'], data_name=cfg['data_name'])
+        else:
+            cfg['step'] = result['cfg']['step']
+            logger = make_logger(cfg['logger_path'], data_name=cfg['data_name'])
+            model.load_state_dict(result['model'])
+            logger.load_state_dict(result['logger'])
+            logger.reset()
+        data_loader = make_data_loader(dataset_i, cfg[cfg['tag']]['optimizer']['batch_size'], cfg['num_steps'],
+                                       cfg['step'], cfg['step_period'], cfg['pin_memory'], cfg['num_workers'],
+                                       cfg['collate_mode'], cfg['seed'])
+        train(data_loader['train'], model, logger, i)
+        test(data_loader['test'], model, logger, i)
+        result = {'cfg': cfg, 'model': model.state_dict(),
+                  'logger': logger.state_dict()}
+        check(result, cfg['checkpoint_path'])
+        if logger.compare('test'):
+            shutil.copytree(cfg['checkpoint_path'], cfg['best_path'], dirs_exist_ok=True)
         logger.reset()
-    data_loader = make_data_loader(dataset_i, cfg[cfg['tag']]['optimizer']['batch_size'], cfg['num_steps'],
-                                   cfg['step'], cfg['step_period'], cfg['pin_memory'], cfg['num_workers'],
-                                   cfg['collate_mode'], cfg['seed'])
-    train(data_loader['train'], model, logger)
-    test(data_loader['test'], model, logger)
-    result = {'cfg': cfg, 'model': model.state_dict(),
-              'logger': logger.state_dict()}
-    check(result, cfg['checkpoint_path'])
-    if logger.compare('test'):
-        shutil.copytree(cfg['checkpoint_path'], cfg['best_path'], dirs_exist_ok=True)
-    logger.reset()
     return
 
 
-def train(data_loader, model, logger):
+def train(data_loader, model, logger, index):
     input = {}
     for i, input_i in enumerate(data_loader):
         for key, value in input_i.items():
@@ -78,14 +79,14 @@ def train(data_loader, model, logger):
     output = model.fit(input)
     evaluation = logger.evaluate('train', 'batch', input, output)
     logger.append(evaluation, 'train', n=input_size)
-    info = {'info': ['Model: {}'.format(cfg['tag']),
+    info = {'info': ['Model: {} ({})'.format(cfg['tag'], index),
                      'Train Epoch: 1(100%)']}
     logger.append(info, 'train')
     print(logger.write('train'))
     return
 
 
-def test(data_loader, model, logger):
+def test(data_loader, model, logger, index):
     input = {}
     for i, input_i in enumerate(data_loader):
         for key, value in input_i.items():
@@ -101,7 +102,7 @@ def test(data_loader, model, logger):
     logger.add('test', input, output)
     evaluation = logger.evaluate('test', 'full')
     logger.append(evaluation, 'test', input_size)
-    info = {'info': ['Model: {}'.format(cfg['tag']),
+    info = {'info': ['Model: {} ({})'.format(cfg['tag'], index),
                      'Test Epoch: 1(100%)']}
     logger.append(info, 'test')
     print(logger.write('test'))

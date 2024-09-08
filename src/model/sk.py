@@ -6,14 +6,15 @@ from .model import make_loss, normalize
 
 
 class SK:
-    def __init__(self, model_name, stats, task_mode):
+    def __init__(self, model_name, stats, task_mode, index):
         super().__init__()
-        self.data_mean = stats['data'].mean
-        self.data_std = stats['data'].std
         self.task_mode = task_mode
+        self.index = index
+        self.data_mean = stats[index]['data'].mean
+        self.data_std = stats[index]['data'].std
         if task_mode == 'regression':
-            self.target_mean = stats['target'].mean
-            self.target_std = stats['target'].mean
+            self.target_mean = stats[index]['target'].mean
+            self.target_std = stats[index]['target'].mean
         if task_mode == 'regression':
             if model_name == 'svm':
                 self.model = SVR()
@@ -74,6 +75,6 @@ class SK:
         return
 
 
-def sk(model_name, stats, task_mode):
-    model = SK(model_name, stats, task_mode)
+def sk(model_name, stats, task_mode, index):
+    model = SK(model_name, stats, task_mode, index)
     return model

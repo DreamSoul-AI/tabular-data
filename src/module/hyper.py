@@ -5,6 +5,7 @@ from .stats import make_stats
 def process_control():
     cfg['data_name'] = cfg['control']['data_name']
     cfg['model_name'] = cfg['control']['model_name']
+    cfg['eval_mode'] = cfg['control']['eval_mode']
 
     cfg['batch_size'] = 256
     cfg['step_period'] = 1
@@ -24,7 +25,7 @@ def process_control():
     cfg['model']['mlp'] = {'hidden_size': 128, 'scale_factor': 2, 'num_layers': 2, 'activation': 'relu'}
     cfg['model']['kan'] = {'hidden_size': [128, 256]}
     if 'make_stats' not in cfg:
-        cfg['model']['stats'] = make_stats(cfg['control']['data_name'])
+        cfg['model']['stats'] = make_stats('{}_{}'.format(cfg['control']['data_name'], cfg['eval_mode']))
 
     tag = cfg['tag']
     cfg[tag] = {}

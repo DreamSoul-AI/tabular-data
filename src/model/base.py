@@ -4,15 +4,16 @@ from .model import make_loss, normalize
 
 
 class Base(nn.Module):
-    def __init__(self, core, stats, task_mode):
+    def __init__(self, core, stats, task_mode, index):
         super().__init__()
         self.core = core
+        self.index = index
         self.task_mode = task_mode
-        self.register_buffer('data_mean', stats['data'].mean)
-        self.register_buffer('data_std', stats['data'].std)
+        self.register_buffer('data_mean', stats[index]['data'].mean)
+        self.register_buffer('data_std', stats[index]['data'].std)
         if task_mode == 'regression':
-            self.register_buffer('target_mean', stats['target'].mean)
-            self.register_buffer('target_std', stats['target'].mean)
+            self.register_buffer('target_mean', stats[index]['target'].mean)
+            self.register_buffer('target_std', stats[index]['target'].mean)
 
     def forward(self, input):
         output = {}
@@ -29,6 +30,6 @@ class Base(nn.Module):
         return output
 
 
-def base(base, stats, task_mode):
-    model = Base(base, stats, task_mode)
+def base(base, stats, task_mode, index):
+    model = Base(base, stats, task_mode, index)
     return model

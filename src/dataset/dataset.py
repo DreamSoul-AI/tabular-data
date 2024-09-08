@@ -1,19 +1,45 @@
+import copy
+import dataset
 import numpy as np
 import os
 import torch
+from sklearn.model_selection import train_test_split, KFold, LeaveOneOut
 from torch.utils.data import DataLoader
 from torch.utils.data.dataloader import default_collate
 from config import cfg
 
 
-def make_dataset(data_name, verbose=True):
-    dataset_ = {}
+def make_dataset(data_name, eval_mode=None, verbose=True):
     if verbose:
         print('fetching data {}...'.format(data_name))
     root = os.path.join('data', data_name)
+    eval_mode = '0.9-holdout' if eval_mode is None else eval_mode
     if data_name in ['Diabetes', 'Iris']:
-        dataset_['train'] = eval('dataset.{}(root=root, split="train")'.format(data_name))
-        dataset_['test'] = eval('dataset.{}(root=root, split="test")'.format(data_name))
+        _dataset = eval('dataset.{}(root=root)'.format(data_name))
+        if 'holdout' in eval_mode:
+            test_size = 1 - float(eval_mode.split('-')[0])
+            train_idx, test_idx = train_test_split(range(len(_dataset)), test_size=test_size,
+                                                   random_state=cfg['seed'])
+            train_idx, test_idx = [train_idx], [test_idx]
+        elif 'fold' in eval_mode:
+            k = int(eval_mode.split('-')[0])
+            kf = KFold(n_splits=k)
+            train_idx, test_idx = [], []
+            for train_idx_i, test_idx_i in kf.split(range(len(_dataset))):
+                train_idx.append(train_idx_i)
+                test_idx.append(test_idx_i)
+        elif 'loo' in eval_mode:
+            loo = LeaveOneOut()
+            train_idx, test_idx = [], []
+            for train_idx_i, test_idx_i in loo.split(range(len(_dataset))):
+                train_idx.append(train_idx_i)
+                test_idx.append(test_idx_i)
+        else:
+            raise ValueError('Not valid eval mode')
+        dataset_ = []
+        for i in range(len(train_idx)):
+            dataset_i = {'train': split_dataset(_dataset, train_idx[i]), 'test': split_dataset(_dataset, test_idx[i])}
+            dataset_.append(dataset_i)
     else:
         raise ValueError('Not valid dataset name')
     if verbose:
@@ -89,3 +115,11 @@ def process_dataset(dataset):
     else:
         raise ValueError('Not valid dataset name')
     return processed_dataset
+
+
+def split_dataset(dataset, idx):
+    dataset_ = copy.deepcopy(dataset)
+    dataset_.data = [dataset.data[s] for s in idx]
+    dataset_.target = [dataset.target[s] for s in idx]
+    dataset_.id = list(range(len(dataset_.data)))
+    return dataset_

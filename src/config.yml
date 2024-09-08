@@ -2,7 +2,8 @@
 # control
 control:
   data_name: Iris
-  model_name: gb
+  model_name: linear
+  eval_mode: 0.9-holdout
 # experiment
 pin_memory: True
 num_workers: 0

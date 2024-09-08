@@ -34,27 +34,28 @@ def runExperiment():
     torch.cuda.manual_seed(cfg['seed'])
     cfg['path'] = os.path.join('output', 'exp')
     cfg['tag_path'] = os.path.join(cfg['path'], cfg['tag'])
-    dataset = make_dataset(cfg['data_name'])
-    cfg['checkpoint_path'] = os.path.join(cfg['tag_path'], 'checkpoint')
-    cfg['best_path'] = os.path.join(cfg['tag_path'], 'best')
-    cfg['logger_path'] = os.path.join('output', 'logger', 'test', 'runs', cfg['tag'])
-    cfg['result_path'] = os.path.join('output', 'result', cfg['tag'])
-    model = make_model(cfg['model'])
-    result = resume(cfg['best_path'])
-    cfg['step'] = result['cfg']['step']
-    model.load_state_dict(result['model'])
-    dataset_i = process_dataset(dataset)
-    data_loader = make_data_loader(dataset_i, cfg[cfg['tag']]['optimizer']['batch_size'])
-    test_logger = make_logger(cfg['logger_path'], data_name=cfg['data_name'])
-    test(data_loader['test'], model, test_logger)
-    result = resume(cfg['checkpoint_path'])
-    result = {'cfg': cfg, 'logger': {'train': result['logger'],
-                                     'test': test_logger.state_dict()}}
-    save(result, cfg['result_path'])
+    dataset = make_dataset(cfg['data_name'], cfg['eval_mode'])
+    for i in range(len(dataset)):
+        cfg['checkpoint_path'] = os.path.join(cfg['tag_path'], 'checkpoint', str(i))
+        cfg['best_path'] = os.path.join(cfg['tag_path'], 'best', str(i))
+        cfg['logger_path'] = os.path.join('output', 'logger', 'test', 'runs', cfg['tag'], str(i))
+        cfg['result_path'] = os.path.join('output', 'result', cfg['tag'], str(i))
+        dataset_i = process_dataset(dataset[i])
+        model = make_model(cfg['model'], i)
+        result = resume(cfg['best_path'])
+        cfg['step'] = result['cfg']['step']
+        model.load_state_dict(result['model'])
+        data_loader = make_data_loader(dataset_i, cfg[cfg['tag']]['optimizer']['batch_size'])
+        test_logger = make_logger(cfg['logger_path'], data_name=cfg['data_name'])
+        test(data_loader['test'], model, test_logger, i)
+        result = resume(cfg['checkpoint_path'])
+        result = {'cfg': cfg, 'logger': {'train': result['logger'],
+                                         'test': test_logger.state_dict()}}
+        save(result, cfg['result_path'])
     return
 
 
-def test(data_loader, model, logger):
+def test(data_loader, model, logger, index):
     input = {}
     for i, input_i in enumerate(data_loader):
         for key, value in input_i.items():
@@ -70,7 +71,7 @@ def test(data_loader, model, logger):
     logger.add('test', input, output)
     evaluation = logger.evaluate('test', 'full')
     logger.append(evaluation, 'test', input_size)
-    info = {'info': ['Model: {}'.format(cfg['tag']),
+    info = {'info': ['Model: {} ({})'.format(cfg['tag'], index),
                      'Test Epoch: 1(100%)']}
     logger.append(info, 'test')
     print(logger.write('test'))
