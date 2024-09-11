@@ -62,12 +62,11 @@ def runExperiment():
             scheduler.load_state_dict(result['scheduler'])
             logger.load_state_dict(result['logger'])
             logger.reset()
-        data_loader = make_data_loader(dataset_i, cfg[cfg['tag']]['optimizer']['batch_size'], cfg['num_steps'],
+        data_loader = make_data_loader(dataset_i, cfg[cfg['tag']]['optimizer']['batch_size'], None,
                                        cfg['step'], cfg['step_period'], cfg['pin_memory'], cfg['num_workers'],
                                        cfg['collate_mode'], cfg['seed'])
-        data_iterator = enumerate(data_loader['train'])
         while cfg['step'] < cfg['num_steps']:
-            train(data_iterator, model, optimizer, scheduler, logger, i)
+            train(data_loader['train'], model, optimizer, scheduler, logger, i)
             test(data_loader['test'], model, logger, i)
             result = {'cfg': cfg, 'model': model.state_dict(),
                       'optimizer': optimizer.state_dict(), 'scheduler': scheduler.state_dict(),
@@ -83,7 +82,7 @@ def train(data_loader, model, optimizer, scheduler, logger, index):
     model.train(True)
     start_time = time.time()
     with logger.profiler:
-        for i, input in data_loader:
+        for i, input in enumerate(data_loader):
             if i % cfg['step_period'] == 0 and cfg['profile']:
                 logger.profiler.step()
             input_size = input['data'].size(0)

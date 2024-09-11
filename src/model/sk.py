@@ -1,3 +1,5 @@
+from sklearn.linear_model import Ridge, LogisticRegression
+from sklearn.neural_network import MLPRegressor, MLPClassifier
 from sklearn.svm import SVR, SVC
 from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier, \
     GradientBoostingRegressor, GradientBoostingClassifier
@@ -6,7 +8,7 @@ from .model import make_loss, normalize
 
 
 class SK:
-    def __init__(self, model_name, stats, task_mode, index):
+    def __init__(self, model_name, stats, task_mode, index, **kwargs):
         super().__init__()
         self.task_mode = task_mode
         self.index = index
@@ -16,7 +18,11 @@ class SK:
             self.target_mean = stats[index]['target'].mean
             self.target_std = stats[index]['target'].mean
         if task_mode == 'regression':
-            if model_name == 'svm':
+            if model_name == 'ridge':
+                self.model = Ridge(alpha=kwargs['regularization'])
+            elif model_name == 'ann':
+                self.model = MLPRegressor(hidden_layer_sizes=kwargs['hidden_size'], solver=kwargs['solver'])
+            elif model_name == 'svm':
                 self.model = SVR()
             elif model_name == 'rf':
                 self.model = RandomForestRegressor()
@@ -27,7 +33,11 @@ class SK:
             else:
                 raise ValueError('Not valid model name')
         elif task_mode == 'classification':
-            if model_name == 'svm':
+            if model_name == 'ridge':
+                self.model = LogisticRegression(C=1 / kwargs['regularization'])
+            elif model_name == 'ann':
+                self.model = MLPClassifier(hidden_layer_sizes=kwargs['hidden_size'], solver=kwargs['solver'])
+            elif model_name == 'svm':
                 self.model = SVC()
             elif model_name == 'rf':
                 self.model = RandomForestClassifier()
@@ -75,6 +85,15 @@ class SK:
         return
 
 
-def sk(model_name, stats, task_mode, index):
-    model = SK(model_name, stats, task_mode, index)
+def sk(cfg, index):
+    model_name = cfg['model_name']
+    stats = cfg['stats']
+    task_mode = cfg['task_mode']
+    if model_name == 'ridge':
+        kwargs = {'regularization': cfg[model_name]['regularization']}
+    elif model_name == 'ann':
+        kwargs = {'hidden_size': cfg['ann']['hidden_size'], 'solver': cfg['ann']['solver']}
+    else:
+        kwargs = {}
+    model = SK(model_name, stats, task_mode, index, **kwargs)
     return model

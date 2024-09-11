@@ -56,7 +56,7 @@ def main():
         script_name = [['{}_sk_model.py'.format(run)]]
         data_name = ['Diabetes', 'Iris']
         eval_mode = ['0.9-holdout', '3-fold', 'loo']
-        model_name = ['svm', 'rf', 'gb', 'gp']
+        model_name = ['ridge', 'ann', 'svm', 'rf', 'gb', 'gp']
         control_name = [[data_name, eval_mode, model_name]]
         controls = make_controls(script_name, init_seeds, num_experiments, resume_mode, control_name)
     else:

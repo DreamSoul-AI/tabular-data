@@ -30,6 +30,8 @@ class Base(nn.Module):
         return output
 
 
-def base(base, stats, task_mode, index):
-    model = Base(base, stats, task_mode, index)
+def base(core, cfg, index):
+    stats = cfg['stats']
+    task_mode = cfg['task_mode']
+    model = Base(core, stats, task_mode, index)
     return model

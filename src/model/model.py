@@ -9,9 +9,9 @@ from transformers import get_linear_schedule_with_warmup
 def make_model(model_cfg, index):
     if model_cfg['model_name'] in ['linear', 'mlp', 'kan']:
         core = eval('model.{}(model_cfg)'.format(model_cfg['model_name']))
-        base = model.base(core, model_cfg['stats'], model_cfg['task_mode'], index)
-    elif model_cfg['model_name'] in ['svm', 'rf', 'gb', 'gp']:
-        base = model.sk(model_cfg['model_name'], model_cfg['stats'], model_cfg['task_mode'], index)
+        base = model.base(core, model_cfg, index)
+    elif model_cfg['model_name'] in ['ridge', 'ann', 'svm', 'rf', 'gb', 'gp']:
+        base = model.sk(model_cfg, index)
     else:
         raise ValueError('Unknown model: {}'.format(model_cfg['model_name']))
     return base
@@ -74,10 +74,10 @@ def make_optimizer(parameters, cfg):
         optimizer = optim.SGD(parameters, lr=cfg['lr'], momentum=cfg['momentum'],
                               weight_decay=cfg['weight_decay'], nesterov=cfg['nesterov'])
     elif cfg['optimizer_name'] == 'Adam':
-        optimizer = optim.Adam(parameters, lr=cfg['lr'], betas=cfg['momentum'],
+        optimizer = optim.Adam(parameters, lr=cfg['lr'], betas=cfg['betas'],
                                weight_decay=cfg['weight_decay'])
     elif cfg['optimizer_name'] == 'AdamW':
-        optimizer = optim.AdamW(parameters, lr=cfg['lr'], betas=cfg['momentum'],
+        optimizer = optim.AdamW(parameters, lr=cfg['lr'], betas=cfg['betas'],
                                 weight_decay=cfg['weight_decay'])
     elif cfg['optimizer_name'] == 'LBFGS':
         optimizer = optim.LBFGS(parameters, lr=cfg['lr'])
