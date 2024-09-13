@@ -34,6 +34,8 @@ def make_dataset(data_name, eval_mode=None, verbose=True):
             for train_idx_i, test_idx_i in loo.split(range(len(_dataset))):
                 train_idx.append(train_idx_i)
                 test_idx.append(test_idx_i)
+        elif 'full' in eval_mode:
+            train_idx, test_idx = [list(range(len(_dataset)))], [list(range(len(_dataset)))]
         else:
             raise ValueError('Not valid eval mode')
         dataset_ = []
