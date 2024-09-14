@@ -34,3 +34,15 @@ def to_device(input, device):
     output = apply_recursively(fn, input, device,
                                apply_condition=apply_condition, identity_condition=identity_condition)
     return output
+
+
+def gather_input(data_loader):
+    input = {}
+    for i, input_i in enumerate(data_loader):
+        for key, value in input_i.items():
+            if key not in input:
+                input[key] = []
+            input[key].append(value)
+    for key in input:
+        input[key] = torch.cat(input[key], dim=0)
+    return input

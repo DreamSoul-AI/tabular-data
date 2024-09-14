@@ -50,32 +50,34 @@ class SK:
 
     def fit(self, input):
         output = {}
-        x = input['data']
-        x = normalize(x, 1 / self.data_std, -self.data_mean / self.data_std)
-        input['target'] = input['target'].view(-1)
-        if self.task_mode == 'regression':
-            input['target'] = normalize(input['target'], 1 / self.target_std, -self.target_mean / self.target_std)
+        x = self.normalize_input(input)
         self.model.fit(x.numpy(), input['target'].numpy())
         output['target'] = input['target'].new_tensor(self.model.predict(x.numpy()))
         output['loss'] = make_loss(output, input, mode=self.task_mode)
-        if self.task_mode == 'regression':
-            output['target'] = normalize(output['target'], self.target_std, self.target_mean)
-            input['target'] = normalize(input['target'], self.target_std, self.target_mean)
+        self.normalize_output(input, output)
         return output
 
     def predict(self, input):
         output = {}
+        x = self.normalize_input(input)
+        output['target'] = input['target'].new_tensor(self.model.predict(x.numpy()))
+        output['loss'] = make_loss(output, input, mode=self.task_mode)
+        self.normalize_output(input, output)
+        return output
+
+    def normalize_input(self, input):
         x = input['data']
         x = normalize(x, 1 / self.data_std, -self.data_mean / self.data_std)
         input['target'] = input['target'].view(-1)
         if self.task_mode == 'regression':
             input['target'] = normalize(input['target'], 1 / self.target_std, -self.target_mean / self.target_std)
-        output['target'] = input['target'].new_tensor(self.model.predict(x.numpy()))
-        output['loss'] = make_loss(output, input, mode=self.task_mode)
+        return x
+
+    def normalize_output(self, input, output):
         if self.task_mode == 'regression':
             output['target'] = normalize(output['target'], self.target_std, self.target_mean)
             input['target'] = normalize(input['target'], self.target_std, self.target_mean)
-        return output
+        return
 
     def state_dict(self):
         return self.model

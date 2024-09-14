@@ -6,7 +6,7 @@ from config import cfg, process_args
 from dataset import make_dataset, make_data_loader, process_dataset
 from metric import make_logger
 from model import make_model
-from module import save, resume, process_control
+from module import save, resume, process_control, gather_input
 
 cudnn.benchmark = True
 parser = argparse.ArgumentParser(description='cfg')
@@ -47,25 +47,25 @@ def runExperiment():
         model.load_state_dict(result['model'])
         data_loader = make_data_loader(dataset_i, cfg[cfg['tag']]['optimizer']['batch_size'])
         test_logger = make_logger(cfg['logger_path'], data_name=cfg['data_name'])
-        test(data_loader['test'], model, test_logger, i)
+        result_i = test(data_loader['test'], model, test_logger, i)
         result = resume(cfg['checkpoint_path'])
         result = {'cfg': cfg, 'logger': {'train': result['logger'],
-                                         'test': test_logger.state_dict()}}
+                                         'test': test_logger.state_dict()}, 'result': result_i}
         save(result, cfg['result_path'])
     return
 
 
 def test(data_loader, model, logger, index):
-    input = {}
-    for i, input_i in enumerate(data_loader):
-        for key, value in input_i.items():
-            if key not in input:
-                input[key] = []
-            input[key].append(value)
-    for key in input:
-        input[key] = torch.cat(input[key], dim=0)
+    def gather_result(input, output):
+        result = {}
+        result['output'] = output['target']
+        result['target'] = input['target']
+        return result
+
+    input = gather_input(data_loader)
     input_size = input['data'].size(0)
     output = model.predict(input)
+    result = gather_result(input, output)
     evaluation = logger.evaluate('test', 'batch', input, output)
     logger.append(evaluation, 'test', input_size)
     logger.add('test', input, output)
@@ -76,7 +76,7 @@ def test(data_loader, model, logger, index):
     logger.append(info, 'test')
     print(logger.write('test'))
     logger.save(True)
-    return
+    return result
 
 
 if __name__ == "__main__":

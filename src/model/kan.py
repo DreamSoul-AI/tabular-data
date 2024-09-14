@@ -272,16 +272,7 @@ class KAN(torch.nn.Module):
                 )
             )
 
-    def forward(self, input):
-        output = {}
-        x = input['data']
-        x = self.f(x)
-        output['target'] = x
-        output['loss'] = make_loss(output, input)
-
-        return x
-
-    def f(self, x):
+    def forward(self, x):
         update_grid = False
         for layer in self.layers:
             if update_grid:

@@ -17,17 +17,25 @@ class Base(nn.Module):
 
     def forward(self, input):
         output = {}
+        x = self.normalize_input(input)
+        x = self.core(x)
+        output['target'] = x
+        output['loss'] = make_loss(output, input, mode=self.task_mode)
+        self.normalize_output(input, output)
+        return output
+
+    def normalize_input(self, input):
         x = input['data']
         x = normalize(x, 1 / self.data_std, -self.data_mean / self.data_std)
-        x = self.core.f(x)
-        output['target'] = x
         if self.task_mode == 'regression':
             input['target'] = normalize(input['target'], 1 / self.target_std, -self.target_mean / self.target_std)
-        output['loss'] = make_loss(output, input, mode=self.task_mode)
+        return x
+
+    def normalize_output(self, input, output):
         if self.task_mode == 'regression':
             output['target'] = normalize(output['target'], self.target_std, self.target_mean)
             input['target'] = normalize(input['target'], self.target_std, self.target_mean)
-        return output
+        return
 
 
 def base(core, cfg, index):

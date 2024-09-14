@@ -31,18 +31,10 @@ class MLP(nn.Module):
         x = self.linear(x)
         return x
 
-    def f(self, x):
+    def forward(self, x):
         x = self.feature(x)
         x = self.output(x)
         return x
-
-    def forward(self, input):
-        output = {}
-        x = input['data']
-        x = self.f(x)
-        output['target'] = x
-        output['loss'] = make_loss(output, input)
-        return output
 
 
 def mlp(cfg):
