@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
-from .model import make_loss, normalize
+from .model import normalize
+from .loss import make_loss
 
 
 class Base(nn.Module):
@@ -19,7 +20,7 @@ class Base(nn.Module):
         output = {}
         x = self.normalize_input(input)
         x = self.core(x)
-        output['target'] = x
+        output['pred'] = x
         output['loss'] = make_loss(output, input, mode=self.task_mode)
         self.normalize_output(input, output)
         return output
@@ -33,7 +34,7 @@ class Base(nn.Module):
 
     def normalize_output(self, input, output):
         if self.task_mode == 'regression':
-            output['target'] = normalize(output['target'], self.target_std, self.target_mean)
+            output['pred'] = normalize(output['pred'], self.target_std, self.target_mean)
             input['target'] = normalize(input['target'], self.target_std, self.target_mean)
         return
 

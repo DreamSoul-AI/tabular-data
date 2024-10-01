@@ -4,7 +4,8 @@ from sklearn.svm import SVR, SVC
 from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier, \
     GradientBoostingRegressor, GradientBoostingClassifier
 from sklearn.gaussian_process import GaussianProcessRegressor, GaussianProcessClassifier
-from .model import make_loss, normalize
+from .model import normalize
+from .loss import make_loss
 
 
 class SK:
@@ -19,40 +20,40 @@ class SK:
             self.target_std = stats[index]['target'].mean
         if task_mode == 'regression':
             if model_name == 'ridge':
-                self.model = Ridge(alpha=kwargs['regularization'])
+                self.core = Ridge(alpha=kwargs['regularization'])
             elif model_name == 'ann':
-                self.model = MLPRegressor(hidden_layer_sizes=kwargs['hidden_size'], solver=kwargs['solver'])
+                self.core = MLPRegressor(hidden_layer_sizes=kwargs['hidden_size'], solver=kwargs['solver'])
             elif model_name == 'svm':
-                self.model = SVR()
+                self.core = SVR()
             elif model_name == 'rf':
-                self.model = RandomForestRegressor()
+                self.core = RandomForestRegressor()
             elif model_name == 'gb':
-                self.model = GradientBoostingRegressor()
+                self.core = GradientBoostingRegressor()
             elif model_name == 'gp':
-                self.model = GaussianProcessRegressor()
+                self.core = GaussianProcessRegressor()
             else:
                 raise ValueError('Not valid model name')
         elif task_mode == 'classification':
             if model_name == 'ridge':
-                self.model = LogisticRegression(C=1 / kwargs['regularization'])
+                self.core = LogisticRegression(C=1 / kwargs['regularization'])
             elif model_name == 'ann':
-                self.model = MLPClassifier(hidden_layer_sizes=kwargs['hidden_size'], solver=kwargs['solver'])
+                self.core = MLPClassifier(hidden_layer_sizes=kwargs['hidden_size'], solver=kwargs['solver'])
             elif model_name == 'svm':
-                self.model = SVC()
+                self.core = SVC()
             elif model_name == 'rf':
-                self.model = RandomForestClassifier()
+                self.core = RandomForestClassifier()
             elif model_name == 'gb':
-                self.model = GradientBoostingClassifier()
+                self.core = GradientBoostingClassifier()
             elif model_name == 'gp':
-                self.model = GaussianProcessClassifier()
+                self.core = GaussianProcessClassifier()
         else:
             raise ValueError('Not valid task mode')
 
     def fit(self, input):
         output = {}
         x = self.normalize_input(input)
-        self.model.fit(x.numpy(), input['target'].numpy())
-        output['target'] = input['target'].new_tensor(self.model.predict(x.numpy()))
+        self.core.fit(x.numpy(), input['target'].numpy())
+        output['pred'] = input['target'].new_tensor(self.core.predict(x.numpy()))
         output['loss'] = make_loss(output, input, mode=self.task_mode)
         self.normalize_output(input, output)
         return output
@@ -60,7 +61,7 @@ class SK:
     def predict(self, input):
         output = {}
         x = self.normalize_input(input)
-        output['target'] = input['target'].new_tensor(self.model.predict(x.numpy()))
+        output['pred'] = input['target'].new_tensor(self.core.predict(x.numpy()))
         output['loss'] = make_loss(output, input, mode=self.task_mode)
         self.normalize_output(input, output)
         return output
@@ -75,15 +76,15 @@ class SK:
 
     def normalize_output(self, input, output):
         if self.task_mode == 'regression':
-            output['target'] = normalize(output['target'], self.target_std, self.target_mean)
+            output['pred'] = normalize(output['pred'], self.target_std, self.target_mean)
             input['target'] = normalize(input['target'], self.target_std, self.target_mean)
         return
 
     def state_dict(self):
-        return self.model
+        return self.core
 
     def load_state_dict(self, model):
-        self.model = model
+        self.core = model
         return
 
 

@@ -32,57 +32,62 @@ def runExperiment():
     cfg['seed'] = int(cfg['tag'].split('_')[0])
     torch.manual_seed(cfg['seed'])
     torch.cuda.manual_seed(cfg['seed'])
+    cfg['run_mode'] = 'test'
     cfg['path'] = os.path.join('output', 'exp')
     cfg['tag_path'] = os.path.join(cfg['path'], cfg['tag'])
+    cfg['checkpoint_path'] = os.path.join(cfg['tag_path'], 'checkpoint')
+    cfg['best_path'] = os.path.join(cfg['tag_path'], 'best')
+    cfg['logger_path'] = os.path.join('output', 'logger', 'test', 'runs', cfg['tag'])
+    cfg['result_path'] = os.path.join('output', 'result', cfg['tag'])
+    cfg['viz_path'] = os.path.join('output', 'viz', cfg['tag'])
     dataset = make_dataset(cfg['data_name'], cfg['eval_mode'])
+    result = resume(cfg['best_path'])
+    cfg['step'] = result['cfg']['step']
+    test_logger = make_logger(cfg['logger_path'], data_name=cfg['data_name'], run_mode=cfg['run_mode'])
+    result_list = []
     for i in range(len(dataset)):
-        cfg['checkpoint_path'] = os.path.join(cfg['tag_path'], 'checkpoint', str(i))
-        cfg['best_path'] = os.path.join(cfg['tag_path'], 'best', str(i))
-        cfg['logger_path'] = os.path.join('output', 'logger', 'test', 'runs', cfg['tag'], str(i))
-        cfg['result_path'] = os.path.join('output', 'result', cfg['tag'], str(i))
         dataset_i = process_dataset(dataset[i])
-        model = make_model(cfg['model'], i)
-        result = resume(cfg['best_path'])
-        cfg['step'] = result['cfg']['step']
-        model = model.to(cfg['device'])
-        model.load_state_dict(result['model'])
+        model_i = make_model(cfg['model'], i)
+        model_i = model_i.to(cfg['device'])
+        model_i.load_state_dict(result['model'][i])
         data_loader = make_data_loader(dataset_i, cfg[cfg['tag']]['optimizer']['batch_size'])
-        test_logger = make_logger(cfg['logger_path'], data_name=cfg['data_name'])
-        result_i = test(data_loader['test'], model, test_logger, i)
-        result = resume(cfg['checkpoint_path'])
-        result = {'cfg': cfg, 'logger': {'train': result['logger'],
-                                         'test': test_logger.state_dict()}, 'result': result_i}
-        save(result, cfg['result_path'])
+        result_i = test(data_loader['test'], model_i, test_logger)
+        result_list.append(result_i)
+    evaluation = test_logger.evaluate('test', 'full')
+    test_logger.append(evaluation, 'test')
+    info = {'info': ['Model: {} (full)'.format(cfg['tag']),
+                     'Test Epoch: {}({:.0f}%)'.format(cfg['step'] // cfg['eval_period'], 100.)]}
+    test_logger.append(info, 'test')
+    print(test_logger.write('test'))
+    test_logger.save(True)
+    result = resume(cfg['checkpoint_path'])
+    result = {'cfg': cfg, 'logger': {'train': result['logger'],
+                                     'test': test_logger.state_dict()}, 'result': result_list}
+    save(result, cfg['result_path'])
     return
 
 
-def test(data_loader, model, logger, index):
-    result = {'output': [], 'target': []}
-
+def test(data_loader, model, logger):
     def gather_result(input, output):
-        result['output'].append(output['target'].detach().cpu())
-        result['target'].append(input['target'].detach().cpu())
-        result['output'] = [torch.cat(result['output'], dim=0)]
-        result['target'] = [torch.cat(result['target'], dim=0)]
+        result['id'].append(input['id'])
+        result['pred'].append(output['pred'])
+        result['target'].append(input['target'])
         return
 
     with torch.no_grad():
+        result = {'id': [], 'pred': [], 'target': []}
+
         model.train(False)
         for i, input in enumerate(data_loader):
             input_size = input['data'].size(0)
             input = to_device(input, cfg['device'])
             output = model(input)
-            gather_result(input, output)
             evaluation = logger.evaluate('test', 'batch', input, output)
             logger.append(evaluation, 'test', input_size)
             logger.add('test', input, output)
-        evaluation = logger.evaluate('test', 'full')
-        logger.append(evaluation, 'test', input_size)
-        info = {'info': ['Model: {} ({})'.format(cfg['tag'], index),
-                         'Test Epoch: {}({:.0f}%)'.format(cfg['step'] // cfg['eval_period'], 100.)]}
-        logger.append(info, 'test')
-        print(logger.write('test'))
-        logger.save(True)
+            gather_result(input, output)
+        for k in result:
+            result[k] = torch.cat(result[k], dim=0).detach().cpu().numpy()
     return result
 
 

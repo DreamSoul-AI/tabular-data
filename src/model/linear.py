@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import math
-from .model import init_param, make_loss
+from .model import init_param
 
 
 class Linear(nn.Module):

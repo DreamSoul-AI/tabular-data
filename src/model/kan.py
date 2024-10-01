@@ -1,7 +1,6 @@
 import torch
 import torch.nn.functional as F
 import math
-from .model import make_loss
 
 
 class KANLinear(torch.nn.Module):

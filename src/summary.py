@@ -37,7 +37,7 @@ def runExperiment():
     dataset = make_dataset(cfg['data_name'])
     cfg['step'] = 0
     dataset = process_dataset(dataset)
-    model = make_model(cfg['model'])
+    model = make_model(cfg['model'], 0)
     model = model.to(cfg['device'])
     batch_size = {'train': 2, 'test': 2}
     data_loader = make_data_loader(dataset, batch_size)

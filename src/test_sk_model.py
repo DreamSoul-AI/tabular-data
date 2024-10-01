@@ -6,7 +6,7 @@ from config import cfg, process_args
 from dataset import make_dataset, make_data_loader, process_dataset
 from metric import make_logger
 from model import make_model
-from module import save, resume, process_control, gather_input
+from module import save, resume, process_control, gather_input, make_shap, viz_shap
 
 cudnn.benchmark = True
 parser = argparse.ArgumentParser(description='cfg')
@@ -32,50 +32,59 @@ def runExperiment():
     cfg['seed'] = int(cfg['tag'].split('_')[0])
     torch.manual_seed(cfg['seed'])
     torch.cuda.manual_seed(cfg['seed'])
+    cfg['run_mode'] = 'test'
     cfg['path'] = os.path.join('output', 'exp')
     cfg['tag_path'] = os.path.join(cfg['path'], cfg['tag'])
+    cfg['checkpoint_path'] = os.path.join(cfg['tag_path'], 'checkpoint')
+    cfg['best_path'] = os.path.join(cfg['tag_path'], 'best')
+    cfg['logger_path'] = os.path.join('output', 'logger', 'test', 'runs', cfg['tag'])
+    cfg['result_path'] = os.path.join('output', 'result', cfg['tag'])
+    cfg['viz_path'] = os.path.join('output', 'viz', cfg['tag'])
     dataset = make_dataset(cfg['data_name'], cfg['eval_mode'])
+    result = resume(cfg['best_path'])
+    cfg['step'] = result['cfg']['step']
+    test_logger = make_logger(cfg['logger_path'], data_name=cfg['data_name'], run_mode=cfg['run_mode'])
+    result_list = []
+    shap_list = []
     for i in range(len(dataset)):
-        cfg['checkpoint_path'] = os.path.join(cfg['tag_path'], 'checkpoint', str(i))
-        cfg['best_path'] = os.path.join(cfg['tag_path'], 'best', str(i))
-        cfg['logger_path'] = os.path.join('output', 'logger', 'test', 'runs', cfg['tag'], str(i))
-        cfg['result_path'] = os.path.join('output', 'result', cfg['tag'], str(i))
         dataset_i = process_dataset(dataset[i])
-        model = make_model(cfg['model'], i)
-        result = resume(cfg['best_path'])
-        cfg['step'] = result['cfg']['step']
-        model.load_state_dict(result['model'])
+        model_i = make_model(cfg['model'], i)
+        model_i.load_state_dict(result['model'][i])
         data_loader = make_data_loader(dataset_i, cfg[cfg['tag']]['optimizer']['batch_size'])
-        test_logger = make_logger(cfg['logger_path'], data_name=cfg['data_name'])
-        result_i = test(data_loader['test'], model, test_logger, i)
-        result = resume(cfg['checkpoint_path'])
-        result = {'cfg': cfg, 'logger': {'train': result['logger'],
-                                         'test': test_logger.state_dict()}, 'result': result_i}
-        save(result, cfg['result_path'])
+        result_i = test(data_loader['test'], model_i, test_logger)
+        shap_i = make_shap(data_loader, model_i, cfg['model']['model_name'])
+        result_list.append(result_i)
+        shap_list.append(shap_i)
+    evaluation = test_logger.evaluate('test', 'full')
+    test_logger.append(evaluation, 'test')
+    info = {'info': ['Model: {} (full)'.format(cfg['tag']), 'Test Epoch: 1(100%)']}
+    test_logger.append(info, 'test')
+    print(test_logger.write('test'))
+    test_logger.save(True)
+    result = resume(cfg['checkpoint_path'])
+    result = {'cfg': cfg, 'logger': {'train': result['logger'],
+                                     'test': test_logger.state_dict()}, 'result': result_list, 'shap': shap_list}
+    save(result, cfg['result_path'])
+    if cfg['viz_condition']:
+        viz_shap(shap_list, cfg['viz_path'])
     return
 
 
-def test(data_loader, model, logger, index):
+def test(data_loader, model, logger):
     def gather_result(input, output):
         result = {}
-        result['output'] = output['target']
-        result['target'] = input['target']
+        result['id'] = input['id'].detach().cpu().numpy()
+        result['pred'] = output['pred'].detach().cpu().numpy()
+        result['target'] = input['target'].detach().cpu().numpy()
         return result
 
     input = gather_input(data_loader)
     input_size = input['data'].size(0)
     output = model.predict(input)
-    result = gather_result(input, output)
     evaluation = logger.evaluate('test', 'batch', input, output)
     logger.append(evaluation, 'test', input_size)
     logger.add('test', input, output)
-    evaluation = logger.evaluate('test', 'full')
-    logger.append(evaluation, 'test', input_size)
-    info = {'info': ['Model: {} ({})'.format(cfg['tag'], index),
-                     'Test Epoch: 1(100%)']}
-    logger.append(info, 'test')
-    print(logger.write('test'))
-    logger.save(True)
+    result = gather_result(input, output)
     return result
 
 

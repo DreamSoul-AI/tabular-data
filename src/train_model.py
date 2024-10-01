@@ -35,46 +35,63 @@ def runExperiment():
     cfg['seed'] = int(cfg['tag'].split('_')[0])
     torch.manual_seed(cfg['seed'])
     torch.cuda.manual_seed(cfg['seed'])
+    cfg['run_mode'] = 'train'
     cfg['path'] = os.path.join('output', 'exp')
     cfg['tag_path'] = os.path.join(cfg['path'], cfg['tag'])
+    cfg['checkpoint_path'] = os.path.join(cfg['tag_path'], 'checkpoint')
+    cfg['best_path'] = os.path.join(cfg['tag_path'], 'best')
+    cfg['logger_path'] = os.path.join('output', 'logger', 'train', 'runs', cfg['tag'])
     dataset = make_dataset(cfg['data_name'], cfg['eval_mode'])
+    result = resume(cfg['checkpoint_path'], resume_mode=cfg['resume_mode'])
+    if result is None:
+        logger = make_logger(cfg['logger_path'], data_name=cfg['data_name'], run_mode=cfg['run_mode'])
+    else:
+        logger = make_logger(cfg['logger_path'], data_name=cfg['data_name'], run_mode=cfg['run_mode'])
+        logger.load_state_dict(result['logger'])
+        logger.reset()
+    model = []
+    optimizer = []
+    scheduler = []
     for i in range(len(dataset)):
-        cfg['checkpoint_path'] = os.path.join(cfg['tag_path'], 'checkpoint', str(i))
-        cfg['best_path'] = os.path.join(cfg['tag_path'], 'best', str(i))
-        cfg['logger_path'] = os.path.join('output', 'logger', 'train', 'runs', cfg['tag'], str(i))
         dataset_i = process_dataset(dataset[i])
-        model = make_model(cfg['model'], i)
-        result = resume(cfg['checkpoint_path'], resume_mode=cfg['resume_mode'])
+        model_i = make_model(cfg['model'], i)
         if result is None:
             cfg['step'] = 0
-            model = model.to(cfg['device'])
-            optimizer = make_optimizer(model.parameters(), cfg[cfg['tag']]['optimizer'])
-            scheduler = make_scheduler(optimizer, cfg[cfg['tag']]['optimizer'])
-            logger = make_logger(cfg['logger_path'], data_name=cfg['data_name'])
+            model_i = model_i.to(cfg['device'])
+            optimizer_i = make_optimizer(model_i.parameters(), cfg[cfg['tag']]['optimizer'])
+            scheduler_i = make_scheduler(optimizer_i, cfg[cfg['tag']]['optimizer'])
         else:
             cfg['step'] = result['cfg']['step']
-            model = model.to(cfg['device'])
-            optimizer = make_optimizer(model.parameters(), cfg[cfg['tag']]['optimizer'])
-            scheduler = make_scheduler(optimizer, cfg[cfg['tag']]['optimizer'])
-            logger = make_logger(cfg['logger_path'], data_name=cfg['data_name'])
-            model.load_state_dict(result['model'])
-            optimizer.load_state_dict(result['optimizer'])
-            scheduler.load_state_dict(result['scheduler'])
-            logger.load_state_dict(result['logger'])
-            logger.reset()
+            model_i = model_i.to(cfg['device'])
+            optimizer_i = make_optimizer(model_i.parameters(), cfg[cfg['tag']]['optimizer'])
+            scheduler_i = make_scheduler(optimizer_i, cfg[cfg['tag']]['optimizer'])
+            model_i.load_state_dict(result['model'][i])
+            optimizer_i.load_state_dict(result['optimizer'])
+            scheduler_i.load_state_dict(result['scheduler'])
         data_loader = make_data_loader(dataset_i, cfg[cfg['tag']]['optimizer']['batch_size'], None,
                                        cfg['step'], cfg['step_period'], cfg['pin_memory'], cfg['num_workers'],
                                        cfg['collate_mode'], cfg['seed'])
         while cfg['step'] < cfg['num_steps']:
-            train(data_loader['train'], model, optimizer, scheduler, logger, i)
-            test(data_loader['test'], model, logger, i)
-            result = {'cfg': cfg, 'model': model.state_dict(),
-                      'optimizer': optimizer.state_dict(), 'scheduler': scheduler.state_dict(),
-                      'logger': logger.state_dict()}
-            check(result, cfg['checkpoint_path'])
-            if logger.compare('test'):
-                shutil.copytree(cfg['checkpoint_path'], cfg['best_path'], dirs_exist_ok=True)
-            logger.reset()
+            train(data_loader['train'], model_i, optimizer_i, scheduler_i, logger, i)
+        test(data_loader['test'], model_i, logger)
+        model.append(model_i)
+        optimizer.append(optimizer_i)
+        scheduler.append(scheduler_i)
+    evaluation = logger.evaluate('test', 'full')
+    logger.append(evaluation, 'test')
+    info = {'info': ['Model: {} (full)'.format(cfg['tag']),
+                     'Test Epoch: {}({:.0f}%)'.format(cfg['step'] // cfg['eval_period'], 100.)]}
+    logger.append(info, 'test')
+    print(logger.write('test'))
+    logger.save(True)
+    result = {'cfg': cfg, 'model': [model_i.state_dict() for model_i in model],
+              'optimizer': [optimizer_i.state_dict() for optimizer_i in optimizer],
+              'scheduler': [scheduler_i.state_dict() for scheduler_i in scheduler],
+              'logger': logger.state_dict()}
+    check(result, cfg['checkpoint_path'])
+    if logger.compare('test'):
+        shutil.copytree(cfg['checkpoint_path'], cfg['best_path'], dirs_exist_ok=True)
+    logger.reset()
     return
 
 
@@ -119,7 +136,7 @@ def train(data_loader, model, optimizer, scheduler, logger, index):
     return
 
 
-def test(data_loader, model, logger, index):
+def test(data_loader, model, logger):
     with torch.no_grad():
         model.train(False)
         for i, input in enumerate(data_loader):
@@ -129,12 +146,6 @@ def test(data_loader, model, logger, index):
             evaluation = logger.evaluate('test', 'batch', input, output)
             logger.append(evaluation, 'test', input_size)
             logger.add('test', input, output)
-        evaluation = logger.evaluate('test', 'full')
-        logger.append(evaluation, 'test', input_size)
-        info = {'info': ['Model: {} ({})'.format(cfg['tag'], index),
-                         'Test Epoch: {}({:.0f}%)'.format(cfg['step'] // cfg['eval_period'], 100.)]}
-        logger.append(info, 'test')
-        print(logger.write('test'))
         logger.save(True)
     return
 

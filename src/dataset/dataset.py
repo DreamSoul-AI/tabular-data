@@ -108,7 +108,7 @@ def process_dataset(dataset):
         cfg['num_steps'] = int(np.ceil(len(processed_dataset['train']) / cfg['batch_size'])) * cfg['num_epochs']
         cfg['eval_period'] = int(np.ceil(len(processed_dataset['train']) / cfg['batch_size']))
         cfg[cfg['tag']]['optimizer']['num_steps'] = cfg['num_steps']
-    if cfg['model_name'] in ['svm', 'rf', 'gb', 'gp']:
+    if cfg['model_name'] in ['ridge', 'ann', 'svm', 'rf', 'gb', 'gp']:
         cfg['num_steps'] = None
     if cfg['data_name'] in ['Diabetes']:
         cfg['model']['task_mode'] = 'regression'
@@ -121,7 +121,7 @@ def process_dataset(dataset):
 
 def split_dataset(dataset, idx):
     dataset_ = copy.deepcopy(dataset)
+    dataset_.id = [dataset.id[s] for s in idx]
     dataset_.data = [dataset.data[s] for s in idx]
     dataset_.target = [dataset.target[s] for s in idx]
-    dataset_.id = list(range(len(dataset_.data)))
     return dataset_

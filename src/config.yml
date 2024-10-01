@@ -1,9 +1,9 @@
 ---
 # control
 control:
-  data_name: Iris
-  model_name: linear
+  data_name: Diabetes
   eval_mode: 0.9-holdout
+  model_name: linear
 # experiment
 pin_memory: True
 num_workers: 0

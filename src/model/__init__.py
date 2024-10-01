@@ -1,4 +1,5 @@
 from .model import *
+from .loss import *
 from .linear import *
 from .mlp import *
 from .base import *
