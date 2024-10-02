@@ -76,9 +76,9 @@ class RMSE(BaseMetric):
 
 
 class Metric:
-    def __init__(self, metric_name, best, best_direction, best_metric_name):
+    def __init__(self, metric_name, best_direction, best_metric_name):
         self.metric_name = metric_name
-        self.best, self.best_direction, self.best_metric_name = best, best_direction, best_metric_name
+        self.best_direction, self.best_metric_name = best_direction, best_metric_name
         self.metric, self.mode, self.mode_keys = self.make_metric(metric_name)
         self.full_mode_keys = self.make_full_mode(self.mode, self.mode_keys)
         self.reset()
@@ -109,6 +109,15 @@ class Metric:
                 else:
                     raise ValueError('Not valid metric name')
         return metric, mode, mode_keys
+
+    def make_init_best(self):
+        if self.best_direction == 'up':
+            init_best = -float('inf')
+        elif self.best_direction == 'down':
+            init_best = float('inf')
+        else:
+            raise ValueError('Not valid best direction')
+        return init_best
 
     def make_full_mode(self, mode, mode_keys):
         full_mode_keys = {}
@@ -150,7 +159,7 @@ class Metric:
                     output_ = {key: self.buffer['output'][key] for key in
                                self.mode_keys[split][metric_name_i]['output']}
                     evaluation[metric_name_i] = self.metric[split][metric_name_i](**input_, **output_)
-            self.reset()
+            self.reset_buffer()
         else:
             raise ValueError('Not valid mode')
         return evaluation
@@ -166,15 +175,24 @@ class Metric:
             self.best = val
         return compared
 
+    def reset(self):
+        self.reset_best()
+        self.reset_buffer()
+        return
+
+    def reset_best(self):
+        self.best = self.make_init_best()
+        return
+
+    def reset_buffer(self):
+        self.buffer = {'input': {}, 'output': {}}
+        return
+
     def load_state_dict(self, state_dict):
-        self.best = state_dict['best']
         self.best_metric_name = state_dict['best_metric_name']
         self.best_direction = state_dict['best_direction']
+        self.reset_best()
         return
 
     def state_dict(self):
-        return {'best': self.best, 'best_metric_name': self.best_metric_name, 'best_direction': self.best_direction}
-
-    def reset(self):
-        self.buffer = {'input': {}, 'output': {}}
-        return
+        return {'best_metric_name': self.best_metric_name, 'best_direction': self.best_direction}

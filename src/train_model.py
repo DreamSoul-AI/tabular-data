@@ -1,4 +1,5 @@
 import argparse
+import copy
 import datetime
 import os
 import shutil
@@ -41,7 +42,6 @@ def runExperiment():
     cfg['checkpoint_path'] = os.path.join(cfg['tag_path'], 'checkpoint')
     cfg['best_path'] = os.path.join(cfg['tag_path'], 'best')
     cfg['logger_path'] = os.path.join('output', 'logger', 'train', 'runs', cfg['tag'])
-    dataset = make_dataset(cfg['data_name'], cfg['eval_mode'])
     result = resume(cfg['checkpoint_path'], resume_mode=cfg['resume_mode'])
     if result is None:
         logger = make_logger(cfg['logger_path'], data_name=cfg['data_name'], run_mode=cfg['run_mode'])
@@ -49,6 +49,7 @@ def runExperiment():
         logger = make_logger(cfg['logger_path'], data_name=cfg['data_name'], run_mode=cfg['run_mode'])
         logger.load_state_dict(result['logger'])
         logger.reset()
+    dataset = make_dataset(cfg['data_name'], cfg['eval_mode'])
     model = []
     optimizer = []
     scheduler = []
@@ -66,20 +67,25 @@ def runExperiment():
             optimizer_i = make_optimizer(model_i.parameters(), cfg[cfg['tag']]['optimizer'])
             scheduler_i = make_scheduler(optimizer_i, cfg[cfg['tag']]['optimizer'])
             model_i.load_state_dict(result['model'][i])
-            optimizer_i.load_state_dict(result['optimizer'])
-            scheduler_i.load_state_dict(result['scheduler'])
+            optimizer_i.load_state_dict(result['optimizer'][i])
+            scheduler_i.load_state_dict(result['scheduler'][i])
         data_loader = make_data_loader(dataset_i, cfg[cfg['tag']]['optimizer']['batch_size'], None,
                                        cfg['step'], cfg['step_period'], cfg['pin_memory'], cfg['num_workers'],
                                        cfg['collate_mode'], cfg['seed'])
+        best_model = copy.deepcopy(model_i)
         while cfg['step'] < cfg['num_steps']:
             train(data_loader['train'], model_i, optimizer_i, scheduler_i, logger, i)
-        test(data_loader['test'], model_i, logger)
-        model.append(model_i)
+            test(data_loader['test'], model_i, logger, i, 'batch')
+            if logger.compare('test'):
+                best_model.load_state_dict(copy.deepcopy(model_i.state_dict()))
+        test(data_loader['test'], model_i, logger, i, None, True)
+        logger.metric.reset_best()
+        model.append(best_model)
         optimizer.append(optimizer_i)
         scheduler.append(scheduler_i)
     evaluation = logger.evaluate('test', 'full')
     logger.append(evaluation, 'test')
-    info = {'info': ['Model: {} (full)'.format(cfg['tag']),
+    info = {'info': ['Model: {} ({})'.format(cfg['tag'], 'full', True),
                      'Test Epoch: {}({:.0f}%)'.format(cfg['step'] // cfg['eval_period'], 100.)]}
     logger.append(info, 'test')
     print(logger.write('test'))
@@ -91,11 +97,10 @@ def runExperiment():
     check(result, cfg['checkpoint_path'])
     if logger.compare('test'):
         shutil.copytree(cfg['checkpoint_path'], cfg['best_path'], dirs_exist_ok=True)
-    logger.reset()
     return
 
 
-def train(data_loader, model, optimizer, scheduler, logger, index):
+def train(data_loader, model, optimizer, scheduler, logger, index, verbose=False):
     model.train(True)
     start_time = time.time()
     with logger.profiler:
@@ -128,7 +133,8 @@ def train(data_loader, model, optimizer, scheduler, logger, index):
                                  'Epoch Finished Time: {}'.format(epoch_finished_time),
                                  'Experiment Finished Time: {}'.format(exp_finished_time)]}
                 logger.append(info, 'train')
-                print(logger.write('train'))
+                if verbose:
+                    print(logger.write('train'))
             if (i + 1) % cfg['step_period'] == 0:
                 cfg['step'] += 1
             if (idx + 1) % cfg['eval_period'] == 0 and (i + 1) % cfg['step_period'] == 0:
@@ -136,16 +142,23 @@ def train(data_loader, model, optimizer, scheduler, logger, index):
     return
 
 
-def test(data_loader, model, logger):
+def test(data_loader, model, logger, index, mode=None, verbose=False):
     with torch.no_grad():
         model.train(False)
         for i, input in enumerate(data_loader):
             input_size = input['data'].size(0)
             input = to_device(input, cfg['device'])
             output = model(input)
-            evaluation = logger.evaluate('test', 'batch', input, output)
-            logger.append(evaluation, 'test', input_size)
-            logger.add('test', input, output)
+            if mode is None or mode == 'batch':
+                evaluation = logger.evaluate('test', 'batch', input, output)
+                logger.append(evaluation, 'test', input_size)
+            if mode is None or mode == 'full':
+                logger.add('test', input, output)
+        info = {'info': ['Model: {} ({})'.format(cfg['tag'], index),
+                         'Test Epoch: {}({:.0f}%)'.format(cfg['step'] // cfg['eval_period'], 100.)]}
+        logger.append(info, 'test')
+        if verbose:
+            print(logger.write('test'))
         logger.save(True)
     return
 

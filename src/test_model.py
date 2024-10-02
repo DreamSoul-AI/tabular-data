@@ -6,7 +6,7 @@ from config import cfg, process_args
 from dataset import make_dataset, make_data_loader, process_dataset
 from metric import make_logger
 from model import make_model
-from module import save, resume, to_device, process_control
+from module import save, resume, to_device, process_control, make_shap, viz_shap
 
 cudnn.benchmark = True
 parser = argparse.ArgumentParser(description='cfg')
@@ -45,6 +45,7 @@ def runExperiment():
     cfg['step'] = result['cfg']['step']
     test_logger = make_logger(cfg['logger_path'], data_name=cfg['data_name'], run_mode=cfg['run_mode'])
     result_list = []
+    shap_list = []
     for i in range(len(dataset)):
         dataset_i = process_dataset(dataset[i])
         model_i = make_model(cfg['model'], i)
@@ -52,7 +53,9 @@ def runExperiment():
         model_i.load_state_dict(result['model'][i])
         data_loader = make_data_loader(dataset_i, cfg[cfg['tag']]['optimizer']['batch_size'])
         result_i = test(data_loader['test'], model_i, test_logger)
+        shap_i = make_shap(data_loader, model_i, cfg['model']['model_name'], cfg['device'])
         result_list.append(result_i)
+        shap_list.append(shap_i)
     evaluation = test_logger.evaluate('test', 'full')
     test_logger.append(evaluation, 'test')
     info = {'info': ['Model: {} (full)'.format(cfg['tag']),
@@ -62,8 +65,10 @@ def runExperiment():
     test_logger.save(True)
     result = resume(cfg['checkpoint_path'])
     result = {'cfg': cfg, 'logger': {'train': result['logger'],
-                                     'test': test_logger.state_dict()}, 'result': result_list}
+                                     'test': test_logger.state_dict()}, 'result': result_list, 'shap': shap_list}
     save(result, cfg['result_path'])
+    if cfg['viz_condition']:
+        viz_shap(shap_list, cfg['viz_path'])
     return
 
 

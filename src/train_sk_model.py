@@ -60,7 +60,8 @@ def runExperiment():
                                        cfg['step'], cfg['step_period'], cfg['pin_memory'], cfg['num_workers'],
                                        cfg['collate_mode'], cfg['seed'])
         train(data_loader['train'], model_i, logger, i)
-        test(data_loader['test'], model_i, logger)
+        test(data_loader['test'], model_i, logger, i, None, True)
+        logger.metric.reset_best()
         model.append(model_i)
     evaluation = logger.evaluate('test', 'full')
     logger.append(evaluation, 'test')
@@ -72,7 +73,6 @@ def runExperiment():
     check(result, cfg['checkpoint_path'])
     if logger.compare('test'):
         shutil.copytree(cfg['checkpoint_path'], cfg['best_path'], dirs_exist_ok=True)
-    logger.reset()
     return
 
 
@@ -92,17 +92,24 @@ def train(data_loader, model, logger, index):
     info = {'info': ['Model: {} ({})'.format(cfg['tag'], index),
                      'Train Epoch: 1(100%)']}
     logger.append(info, 'train')
-    print(logger.write('train'))
     return
 
 
-def test(data_loader, model, logger):
+def test(data_loader, model, logger, index, mode=None, verbose=False):
     input = gather_input(data_loader)
     input_size = input['data'].size(0)
     output = model.predict(input)
-    evaluation = logger.evaluate('test', 'batch', input, output)
-    logger.append(evaluation, 'test', input_size)
-    logger.add('test', input, output)
+    if mode is None or mode == 'batch':
+        evaluation = logger.evaluate('test', 'batch', input, output)
+        logger.append(evaluation, 'test', input_size)
+    if mode is None or mode == 'full':
+        logger.add('test', input, output)
+    info = {'info': ['Model: {} ({})'.format(cfg['tag'], index),
+                     'Test Epoch: {}({:.0f}%)'.format(cfg['step'] // cfg['eval_period'], 100.)]}
+    logger.append(info, 'test')
+    if verbose:
+        print(logger.write('test'))
+    logger.save(True)
     return
 
 

@@ -23,7 +23,7 @@ def make_dataset(data_name, eval_mode=None, verbose=True):
             train_idx, test_idx = [train_idx], [test_idx]
         elif 'fold' in eval_mode:
             k = int(eval_mode.split('-')[0])
-            kf = KFold(n_splits=k)
+            kf = KFold(n_splits=k, shuffle=True, random_state=cfg['seed'])
             train_idx, test_idx = [], []
             for train_idx_i, test_idx_i in kf.split(range(len(_dataset))):
                 train_idx.append(train_idx_i)
