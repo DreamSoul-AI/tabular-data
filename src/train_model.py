@@ -72,14 +72,16 @@ def runExperiment():
         data_loader = make_data_loader(dataset_i, cfg[cfg['tag']]['optimizer']['batch_size'], None,
                                        cfg['step'], cfg['step_period'], cfg['pin_memory'], cfg['num_workers'],
                                        cfg['collate_mode'], cfg['seed'])
+        test_logger = make_logger(cfg['logger_path'], data_name=cfg['data_name'], run_mode=cfg['run_mode'])
         best_model = copy.deepcopy(model_i)
         while cfg['step'] < cfg['num_steps']:
-            train(data_loader['train'], model_i, optimizer_i, scheduler_i, logger, i)
-            test(data_loader['test'], model_i, logger, i, 'batch')
-            if logger.compare('test'):
+            train(data_loader['train'], model_i, optimizer_i, scheduler_i, test_logger, i)
+            test(data_loader['test'], model_i, test_logger, i, 'batch')
+            if test_logger.compare('train'):
                 best_model.load_state_dict(copy.deepcopy(model_i.state_dict()))
-        test(data_loader['test'], model_i, logger, i, None, True)
-        logger.metric.reset_best()
+            test_logger.reset()
+        test_logger.metric.reset_best()
+        test(data_loader['test'], best_model, logger, i, None, True)
         model.append(best_model)
         optimizer.append(optimizer_i)
         scheduler.append(scheduler_i)
