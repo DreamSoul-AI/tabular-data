@@ -1,29 +1,25 @@
 import torch
 import torch.nn.functional as F
-from collections import defaultdict
 
 
 def make_metric(split, **kwargs):
     data_name = kwargs['data_name']
     metric_name = {k: [] for k in split}
     if data_name in ['Diabetes']:
-        best = float('inf')
         best_direction = 'down'
-        best_metric_name = 'RMSE'
+        best_metric_name = 'Loss'
         for k in metric_name:
-            if k == 'train':
-                metric_name[k].extend(['Loss'])
-            elif k == 'test':
-                metric_name[k].extend(['Loss', 'RMSE'])
+            metric_name[k].extend(['Loss', 'MSE'])
+            if k == 'test':
+                metric_name[k].extend(['RMSE', 'R2'])
     elif data_name in ['Iris']:
-        best = -float('inf')
-        best_direction = 'up'
-        best_metric_name = 'Accuracy'
+        best_direction = 'down'
+        best_metric_name = 'Loss'
         for k in metric_name:
             metric_name[k].extend(['Loss', 'Accuracy'])
     else:
         raise ValueError('Not valid data name')
-    metric = Metric(metric_name, best, best_direction, best_metric_name)
+    metric = Metric(metric_name, best_direction, best_metric_name)
     return metric
 
 
@@ -68,11 +64,87 @@ class MSE(BaseMetric):
         return mse
 
 
+class MAE(BaseMetric):
+    def __call__(self, pred, target):
+        with torch.no_grad():
+            mae = torch.mean(torch.abs(pred - target)).item()
+        return mae
+
+
+class MBE(BaseMetric):
+    def __call__(self, pred, target):
+        with torch.no_grad():
+            mbe = torch.mean(pred - target).item()
+        return mbe
+
+
+class MPE(BaseMetric):
+    def __call__(self, pred, target):
+        return torch.mean((pred - target) / target * 100).item()
+
+
 class RMSE(BaseMetric):
     def __call__(self, pred, target):
         with torch.no_grad():
             rmse = F.mse_loss(pred, target).sqrt().item()
         return rmse
+
+
+class R2(BaseMetric):
+    def __call__(self, pred, target):
+        with torch.no_grad():
+            ss_res = torch.sum((target - pred) ** 2).item()
+            ss_tot = torch.sum((target - torch.mean(target)) ** 2).item()
+            r2 = 1 - ss_res / (ss_tot + 1e-6)
+        return r2
+
+
+class Correlation(BaseMetric):
+    def __call__(self, pred, target):
+        with torch.no_grad():
+            pred_mean = torch.mean(pred)
+            target_mean = torch.mean(target)
+            covariance = torch.mean((pred - pred_mean) * (target - target_mean))
+            pred_std = torch.std(pred)
+            target_std = torch.std(target)
+            correlation = (covariance / (pred_std * target_std)).item()
+        return correlation
+
+
+class ResidualMean(BaseMetric):
+    def __call__(self, pred, target):
+        with torch.no_grad():
+            residuals = pred - target
+            res_mean = torch.mean(residuals).item()
+        return res_mean
+
+
+class ResidualStd(BaseMetric):
+    def __call__(self, pred, target):
+        with torch.no_grad():
+            residuals = pred - target
+            res_std = torch.std(residuals).item()
+        return res_std
+
+
+class ResidualSkewness(BaseMetric):
+    def __call__(self, pred, target):
+        with torch.no_grad():
+            residuals = pred - target
+            mean_residuals = torch.mean(residuals)
+            std_residuals = torch.std(residuals)
+            res_skewness = torch.mean(((residuals - mean_residuals) / std_residuals) ** 3).item()
+        return res_skewness
+
+
+class ResidualKurtosis(BaseMetric):
+    def __call__(self, pred, target):
+        with torch.no_grad():
+            residuals = pred - target
+            mean_residuals = torch.mean(residuals)
+            std_residuals = torch.std(residuals)
+            res_kurtosis = torch.mean(((residuals - mean_residuals) / std_residuals) ** 4).item() - 3
+        return res_kurtosis
 
 
 class Metric:

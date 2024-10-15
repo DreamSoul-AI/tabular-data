@@ -1,4 +1,3 @@
-import errno
 import numpy as np
 import os
 import pickle
@@ -10,13 +9,7 @@ def check_exists(path):
 
 
 def makedir_exist_ok(path):
-    try:
-        os.makedirs(path)
-    except OSError as e:
-        if e.errno == errno.EEXIST:
-            pass
-        else:
-            raise
+    os.makedirs(path, exist_ok=True)
     return
 
 

@@ -8,7 +8,7 @@ if __name__ == "__main__":
     stats_path = os.path.join('output', 'stats')
     dim = 1
     data_names = ['Diabetes', 'Iris']
-    eval_modes = ['0.9-holdout', '3-fold', 'loo', 'full']
+    eval_modes = ['0.9-holdout', '3-fold', '10-fold', 'loo', 'full']
     cfg['seed'] = 0
     cfg['tag'] = 'make_dataset'
     cfg['make_stats'] = True

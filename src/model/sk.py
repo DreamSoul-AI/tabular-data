@@ -1,9 +1,11 @@
+import torch
 from sklearn.linear_model import Ridge, LogisticRegression
 from sklearn.neural_network import MLPRegressor, MLPClassifier
 from sklearn.svm import SVR, SVC
 from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier, \
     GradientBoostingRegressor, GradientBoostingClassifier
 from sklearn.gaussian_process import GaussianProcessRegressor, GaussianProcessClassifier
+from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier
 from .model import normalize
 from .loss import make_loss
 
@@ -31,6 +33,8 @@ class SK:
                 self.core = GradientBoostingRegressor()
             elif model_name == 'gp':
                 self.core = GaussianProcessRegressor()
+            elif model_name == 'dt':
+                self.core = DecisionTreeRegressor()
             else:
                 raise ValueError('Not valid model name')
         elif task_mode == 'classification':
@@ -46,6 +50,8 @@ class SK:
                 self.core = GradientBoostingClassifier()
             elif model_name == 'gp':
                 self.core = GaussianProcessClassifier()
+            elif model_name == 'dt':
+                self.core = DecisionTreeClassifier()
         else:
             raise ValueError('Not valid task mode')
 
@@ -61,7 +67,7 @@ class SK:
     def predict(self, input):
         output = {}
         x = self.normalize_input(input)
-        output['pred'] = input['target'].new_tensor(self.core.predict(x.numpy()))
+        output['pred'] = torch.tensor(self.core.predict(x.numpy()), device=input['data'].device)
         output['loss'] = make_loss(output, input, mode=self.task_mode)
         self.normalize_output(input, output)
         return output
@@ -69,15 +75,18 @@ class SK:
     def normalize_input(self, input):
         x = input['data']
         x = normalize(x, 1 / self.data_std, -self.data_mean / self.data_std)
-        input['target'] = input['target'].view(-1)
+        if 'target' in input:
+            input['target'] = input['target'].view(-1)
         if self.task_mode == 'regression':
-            input['target'] = normalize(input['target'], 1 / self.target_std, -self.target_mean / self.target_std)
+            if 'target' in input:
+                input['target'] = normalize(input['target'], 1 / self.target_std, -self.target_mean / self.target_std)
         return x
 
     def normalize_output(self, input, output):
         if self.task_mode == 'regression':
             output['pred'] = normalize(output['pred'], self.target_std, self.target_mean)
-            input['target'] = normalize(input['target'], self.target_std, self.target_mean)
+            if 'target' in input:
+                input['target'] = normalize(input['target'], self.target_std, self.target_mean)
         return
 
     def state_dict(self):

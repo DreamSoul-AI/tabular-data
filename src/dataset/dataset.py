@@ -18,8 +18,7 @@ def make_dataset(data_name, eval_mode=None, verbose=True):
         _dataset = eval('dataset.{}(root=root)'.format(data_name))
         if 'holdout' in eval_mode:
             test_size = 1 - float(eval_mode.split('-')[0])
-            train_idx, test_idx = train_test_split(range(len(_dataset)), test_size=test_size,
-                                                   random_state=cfg['seed'])
+            train_idx, test_idx = train_test_split(range(len(_dataset)), test_size=test_size, random_state=cfg['seed'])
             train_idx, test_idx = [train_idx], [test_idx]
         elif 'fold' in eval_mode:
             k = int(eval_mode.split('-')[0])
@@ -108,7 +107,7 @@ def process_dataset(dataset):
         cfg['num_steps'] = int(np.ceil(len(processed_dataset['train']) / cfg['batch_size'])) * cfg['num_epochs']
         cfg['eval_period'] = int(np.ceil(len(processed_dataset['train']) / cfg['batch_size']))
         cfg[cfg['tag']]['optimizer']['num_steps'] = cfg['num_steps']
-    if cfg['model_name'] in ['ridge', 'ann', 'svm', 'rf', 'gb', 'gp']:
+    if cfg['model_name'] in ['ridge', 'ann', 'svm', 'rf', 'gb', 'gp', 'dt']:
         cfg['num_steps'] = None
     if cfg['data_name'] in ['Diabetes']:
         cfg['model']['task_mode'] = 'regression'

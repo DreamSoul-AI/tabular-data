@@ -33,7 +33,7 @@ def process_control():
     cfg[tag] = {}
     cfg[tag]['optimizer'] = {}
     cfg[tag]['optimizer']['optimizer_name'] = 'AdamW'
-    cfg[tag]['optimizer']['lr'] = 1e-2
+    cfg[tag]['optimizer']['lr'] = 1e-3
     cfg[tag]['optimizer']['momentum'] = 0.9
     cfg[tag]['optimizer']['betas'] = (0.9, 0.999)
     cfg[tag]['optimizer']['weight_decay'] = 1e-4
@@ -41,6 +41,6 @@ def process_control():
     cfg[tag]['optimizer']['batch_size'] = {'train': cfg['batch_size'], 'test': cfg['batch_size']}
     cfg[tag]['optimizer']['step_period'] = cfg['step_period']
     cfg[tag]['optimizer']['num_steps'] = cfg['num_steps']
-    cfg[tag]['optimizer']['scheduler_name'] = 'LinearAnnealingLR'
+    cfg[tag]['optimizer']['scheduler_name'] = 'None'
     cfg[tag]['optimizer']['warmup_ratio'] = 0
     return

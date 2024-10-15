@@ -10,7 +10,7 @@ def make_model(model_cfg, index):
     if model_cfg['model_name'] in ['linear', 'mlp', 'kan']:
         core = eval('model.{}(model_cfg)'.format(model_cfg['model_name']))
         base = model.base(core, model_cfg, index)
-    elif model_cfg['model_name'] in ['ridge', 'ann', 'svm', 'rf', 'gb', 'gp']:
+    elif model_cfg['model_name'] in ['ridge', 'ann', 'svm', 'rf', 'gb', 'gp', 'dt']:
         base = model.sk(model_cfg, index)
     else:
         raise ValueError('Unknown model: {}'.format(model_cfg['model_name']))
