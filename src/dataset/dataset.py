@@ -12,37 +12,40 @@ from config import cfg
 def make_dataset(data_name, eval_mode=None, verbose=True):
     if verbose:
         print('fetching data {}...'.format(data_name))
-    root = os.path.join('data', data_name)
-    eval_mode = '0.9-holdout' if eval_mode is None else eval_mode
     if data_name in ['Diabetes', 'Iris']:
-        _dataset = eval('dataset.{}(root=root)'.format(data_name))
-        if 'holdout' in eval_mode:
-            test_size = 1 - float(eval_mode.split('-')[0])
-            train_idx, test_idx = train_test_split(range(len(_dataset)), test_size=test_size, random_state=cfg['seed'])
-            train_idx, test_idx = [train_idx], [test_idx]
-        elif 'fold' in eval_mode:
-            k = int(eval_mode.split('-')[0])
-            kf = KFold(n_splits=k, shuffle=True, random_state=cfg['seed'])
-            train_idx, test_idx = [], []
-            for train_idx_i, test_idx_i in kf.split(range(len(_dataset))):
-                train_idx.append(train_idx_i)
-                test_idx.append(test_idx_i)
-        elif 'loo' in eval_mode:
-            loo = LeaveOneOut()
-            train_idx, test_idx = [], []
-            for train_idx_i, test_idx_i in loo.split(range(len(_dataset))):
-                train_idx.append(train_idx_i)
-                test_idx.append(test_idx_i)
-        elif 'full' in eval_mode:
-            train_idx, test_idx = [list(range(len(_dataset)))], [list(range(len(_dataset)))]
-        else:
-            raise ValueError('Not valid eval mode')
-        dataset_ = []
-        for i in range(len(train_idx)):
-            dataset_i = {'train': split_dataset(_dataset, train_idx[i]), 'test': split_dataset(_dataset, test_idx[i])}
-            dataset_.append(dataset_i)
+        root = os.path.join('data', data_name)
+        raw_dataset = eval('dataset.{}(root=root)'.format(data_name))
+    elif data_name in ['Bank']:
+        root = os.path.join('data', 'TabLLM')
+        raw_dataset = eval('dataset.{}(root=root)'.format(data_name))
     else:
         raise ValueError('Not valid dataset name')
+    eval_mode = '0.9-holdout' if eval_mode is None else eval_mode
+    if 'holdout' in eval_mode:
+        test_size = 1 - float(eval_mode.split('-')[0])
+        train_idx, test_idx = train_test_split(range(len(raw_dataset)), test_size=test_size, random_state=cfg['seed'])
+        train_idx, test_idx = [train_idx], [test_idx]
+    elif 'fold' in eval_mode:
+        k = int(eval_mode.split('-')[0])
+        kf = KFold(n_splits=k, shuffle=True, random_state=cfg['seed'])
+        train_idx, test_idx = [], []
+        for train_idx_i, test_idx_i in kf.split(range(len(raw_dataset))):
+            train_idx.append(train_idx_i)
+            test_idx.append(test_idx_i)
+    elif 'loo' in eval_mode:
+        loo = LeaveOneOut()
+        train_idx, test_idx = [], []
+        for train_idx_i, test_idx_i in loo.split(range(len(raw_dataset))):
+            train_idx.append(train_idx_i)
+            test_idx.append(test_idx_i)
+    elif 'full' in eval_mode:
+        train_idx, test_idx = [list(range(len(raw_dataset)))], [list(range(len(raw_dataset)))]
+    else:
+        raise ValueError('Not valid eval mode')
+    dataset_ = []
+    for i in range(len(train_idx)):
+        dataset_i = {'train': split_dataset(raw_dataset, train_idx[i]), 'test': split_dataset(raw_dataset, test_idx[i])}
+        dataset_.append(dataset_i)
     if verbose:
         print('data ready')
     return dataset_
