@@ -9,7 +9,7 @@ if __name__ == "__main__":
     dim = 1
     # data_names = ['Diabetes', 'Iris']
     data_names = ['Bank']
-    eval_modes = ['0.9-holdout', '3-fold', '10-fold', 'loo', 'full']
+    eval_modes = ['0.9-holdout', '3-fold', '10-fold']
     cfg['seed'] = 0
     cfg['tag'] = 'make_dataset'
     cfg['make_stats'] = True

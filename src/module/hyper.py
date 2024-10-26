@@ -17,8 +17,8 @@ def process_control():
     cfg['model'] = {}
     model_name_list = cfg['model_name'].split('-')
     cfg['model']['model_name'] = model_name_list[0]
-    data_shape = {'Diabetes': [10], 'Iris': [4], 'Bank': [1]}
-    target_size = {'Diabetes': 1, 'Iris': 3, 'Bank': [1]}
+    data_shape = {'Diabetes': [10], 'Iris': [4], 'Bank': [16]}
+    target_size = {'Diabetes': 1, 'Iris': 3, 'Bank': 1}
     cfg['model']['data_shape'] = data_shape[cfg['data_name']]
     cfg['model']['target_size'] = target_size[cfg['data_name']]
     cfg['model']['linear'] = {}

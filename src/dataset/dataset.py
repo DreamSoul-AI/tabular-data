@@ -114,7 +114,7 @@ def process_dataset(dataset):
         cfg['num_steps'] = None
     if cfg['data_name'] in ['Diabetes']:
         cfg['model']['task_mode'] = 'regression'
-    elif cfg['data_name'] in ['Iris']:
+    elif cfg['data_name'] in ['Iris', 'Bank']:
         cfg['model']['task_mode'] = 'classification'
     else:
         raise ValueError('Not valid dataset name')

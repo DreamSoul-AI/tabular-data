@@ -15,7 +15,7 @@ class Iris(Dataset):
             self.process()
         self.id, self.data, self.target = load(os.path.join(self.processed_folder, 'data'))
         self.classes_counts = make_classes_counts(self.target)
-        self.classes_to_labels, self.target_size = load(os.path.join(self.processed_folder, 'meta'))
+        self.input_size, self.target_size, self.classes_to_labels = load(os.path.join(self.processed_folder, 'meta'))
 
     def __getitem__(self, index):
         id, data, target = torch.tensor(self.id[index]), torch.tensor(self.data[index]), torch.tensor(
@@ -59,7 +59,9 @@ class Iris(Dataset):
         target = y.astype(np.int64)
         id = np.arange(len(data)).astype(np.int64)
         data_set = (id, data, target)
+        input_size = list(X.shape[1:])
         classes = ['Iris-Setosa', 'Iris-Versicolour', 'Iris-Virginica']
         classes_to_labels = {classes[i]: i for i in range(len(classes))}
         target_size = len(classes)
-        return data_set, (classes_to_labels, target_size)
+        meta = (input_size, target_size, classes_to_labels)
+        return data_set, meta
