@@ -53,7 +53,7 @@ class TabLLM(Dataset):
         return
 
     def __repr__(self):
-        return f"Dataset {self.__class__.__name__}\nSize: {self.__len__()}\nRoot: {self.root}\nSplit: {self.split}"
+        return f'Dataset {self.__class__.__name__}\nSize: {self.__len__()}\nRoot: {self.root}\nSplit: {self.split}'
 
     def make_data(self):
         raise NotImplementedError
@@ -142,7 +142,7 @@ class CalHousingC(TabLLM):
         target = y.astype(np.int64)
         id = np.arange(len(data)).astype(np.int64)
         data_set = (id, data, target)
-        classes = ['False', 'True']
+        classes = ['low', 'high']
         classes_to_labels = {classes[i]: i for i in range(len(classes))}
         input_size = list(X.shape[1:])
         target_size = len(classes)
@@ -176,15 +176,104 @@ class CalHousingR(TabLLM):
 
 
 class Car(TabLLM):
-    data_name = 'car'
+    # https://archive.ics.uci.edu/dataset/19/car+evaluation
+    data_name = 'Car'
+    raw_data_name = 'car'
+    feature_names = ['buying', 'maint', 'doors', 'persons', 'lug_boot', 'safety_dict', 'label']
+
+    def make_data(self):
+        dataset = pd.read_csv(os.path.join(self.raw_folder, 'car.data'), names=self.feature_names)
+        label_dict = {'unacc': 0, 'acc': 1, 'good': 2, 'vgood': 3}
+        with pd.option_context('future.no_silent_downcasting', True):
+            dataset['label'] = dataset['label'].replace(label_dict)
+        for col in dataset.select_dtypes(include=['object']).columns:
+            le = LabelEncoder()
+            dataset[col] = le.fit_transform(dataset[col])
+            dataset[col] = dataset[col].astype(float)
+        dataset = dataset.to_numpy()
+        X, y = dataset[:, :-1], dataset[:, -1]
+        data = X.astype(np.float32)
+        target = y.astype(np.int64)
+        id = np.arange(len(data)).astype(np.int64)
+        data_set = (id, data, target)
+        classes = ['unacc', 'acc', 'good', 'vgood']
+        classes_to_labels = {classes[i]: i for i in range(len(classes))}
+        input_size = list(X.shape[1:])
+        target_size = len(classes)
+        meta = {'input_size': input_size, 'target_size': target_size, 'classes_to_labels': classes_to_labels}
+        return data_set, meta
 
 
 class CreditG(TabLLM):
-    data_name = 'creditg'
+    # https://www.kaggle.com/datasets/ppb00x/credit-risk-customers
+    data_name = 'CreditG'
+    raw_data_name = 'creditg'
+    feature_names = [
+        'checking_status', 'duration', 'credit_history', 'purpose',
+        'credit_amount', 'savings_status', 'employment', 'installment_commitment',
+        'personal_status', 'other_parties', 'residence_since', 'property_magnitude',
+        'age', 'other_payment_plans', 'housing', 'existing_credits',
+        'job', 'num_dependents', 'own_telephone', 'foreign_worker'
+    ]
+
+    def make_data(self):
+        dataset = pd.DataFrame(arff.loadarff(os.path.join(self.raw_folder, 'dataset_31_credit-g.arff'))[0])
+        dataset = byte_to_string_columns(dataset)
+        dataset.rename(columns={'class': 'label'}, inplace=True)
+        dataset['label'] = dataset['label'] == 'good'
+        dataset['label'] = dataset['label'].astype(int)
+        for col in dataset.select_dtypes(include=['object']).columns:
+            le = LabelEncoder()
+            dataset[col] = le.fit_transform(dataset[col])
+            dataset[col] = dataset[col].astype(float)
+        dataset = dataset.to_numpy()
+        X, y = dataset[:, :-1], dataset[:, -1]
+        data = X.astype(np.float32)
+        target = y.astype(np.int64)
+        id = np.arange(len(data)).astype(np.int64)
+        data_set = (id, data, target)
+        classes = ['bad', 'good']
+        classes_to_labels = {classes[i]: i for i in range(len(classes))}
+        input_size = list(X.shape[1:])
+        target_size = len(classes)
+        meta = {'input_size': input_size, 'target_size': target_size, 'classes_to_labels': classes_to_labels}
+        return data_set, meta
 
 
 class Diabetes(TabLLM):
-    data_name = 'diabetes'
+    data_name = 'Diabetes'
+    raw_data_name = 'diabetes'
+    feature_names = ['Pregnancies', 'Glucose', 'BloodPressure', 'SkinThickness', 'Insulin', 'BMI',
+                     'DiabetesPedigreeFunction', 'Age']
+
+    def make_data(self):
+        # dataset = pd.read_csv(data_dir / 'diabetes.csv')
+        # original_size = len(dataset)
+        # dataset = dataset.rename(columns={'Outcome': 'label'})
+        # dataset_train, dataset_valid, dataset_test = train_validation_test_split(dataset)
+        # assert len(dataset_train) + len(dataset_valid) + len(dataset_test) == original_size
+
+        dataset = pd.read_csv(os.path.join(self.raw_folder, 'diabetes.csv'))
+        dataset = dataset.rename(columns={'Outcome': 'label'})
+        # print(dataset)
+        # exit()
+        # dataset['label'] = dataset['label'].astype(int)
+        # for col in dataset.select_dtypes(include=['object']).columns:
+        #     le = LabelEncoder()
+        #     dataset[col] = le.fit_transform(dataset[col])
+        #     dataset[col] = dataset[col].astype(float)
+        dataset = dataset.to_numpy()
+        X, y = dataset[:, :-1], dataset[:, -1]
+        data = X.astype(np.float32)
+        target = y.astype(np.int64)
+        id = np.arange(len(data)).astype(np.int64)
+        data_set = (id, data, target)
+        classes = ['False', 'True']
+        classes_to_labels = {classes[i]: i for i in range(len(classes))}
+        input_size = list(X.shape[1:])
+        target_size = len(classes)
+        meta = {'input_size': input_size, 'target_size': target_size, 'classes_to_labels': classes_to_labels}
+        return data_set, meta
 
 
 class Heart(TabLLM):
@@ -202,5 +291,5 @@ class Jungle(TabLLM):
 def byte_to_string_columns(data):
     for col, dtype in data.dtypes.items():
         if dtype == object:  # Only process byte object columns.
-            data[col] = data[col].apply(lambda x: x.decode("utf-8"))
+            data[col] = data[col].apply(lambda x: x.decode('utf-8'))
     return data

@@ -12,10 +12,10 @@ from config import cfg
 def make_dataset(data_name, eval_mode=None, verbose=True):
     if verbose:
         print('fetching data {}...'.format(data_name))
-    if data_name in ['Diabetes', 'Iris']:
+    if data_name in ['Iris']:
         root = os.path.join('data', data_name)
         raw_dataset = eval('dataset.{}(root=root)'.format(data_name))
-    elif data_name in ['Bank', 'Blood', 'CalHousingC', 'CalHousingR']:
+    elif data_name in ['Bank', 'Blood', 'CalHousingC', 'CalHousingR', 'Car', 'CreditG', 'Diabetes']:
         root = os.path.join('data', 'TabLLM')
         raw_dataset = eval('dataset.{}(root=root)'.format(data_name))
     else:
@@ -112,9 +112,9 @@ def process_dataset(dataset):
         cfg[cfg['tag']]['optimizer']['num_steps'] = cfg['num_steps']
     if cfg['model_name'] in ['ridge', 'ann', 'svm', 'rf', 'gb', 'gp', 'dt']:
         cfg['num_steps'] = None
-    if cfg['data_name'] in ['Diabetes']:
+    if cfg['data_name'] in []:
         cfg['model']['task_mode'] = 'regression'
-    elif cfg['data_name'] in ['Iris', 'Bank', 'Blood', 'CalHousingC', 'CalHousingR']:
+    elif cfg['data_name'] in ['Iris', 'Bank', 'Blood', 'CalHousingC', 'CalHousingR', 'Car', 'CreditG', 'Diabetes']:
         cfg['model']['task_mode'] = 'classification'
     else:
         raise ValueError('Not valid dataset name')
