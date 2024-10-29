@@ -15,7 +15,8 @@ def make_dataset(data_name, eval_mode=None, verbose=True):
     if data_name in ['Iris']:
         root = os.path.join('data', data_name)
         raw_dataset = eval('dataset.{}(root=root)'.format(data_name))
-    elif data_name in ['Bank', 'Blood', 'CalHousingC', 'CalHousingR', 'Car', 'CreditG', 'Diabetes']:
+    elif data_name in ['Bank', 'Blood', 'CalHousingC', 'CalHousingR', 'Car', 'CreditG', 'Diabetes', 'Heart', 'Income',
+                       'Jungle']:
         root = os.path.join('data', 'TabLLM')
         raw_dataset = eval('dataset.{}(root=root)'.format(data_name))
     else:
@@ -114,7 +115,8 @@ def process_dataset(dataset):
         cfg['num_steps'] = None
     if cfg['data_name'] in []:
         cfg['model']['task_mode'] = 'regression'
-    elif cfg['data_name'] in ['Iris', 'Bank', 'Blood', 'CalHousingC', 'CalHousingR', 'Car', 'CreditG', 'Diabetes']:
+    elif cfg['data_name'] in ['Iris', 'Bank', 'Blood', 'CalHousingC', 'CalHousingR', 'Car', 'CreditG', 'Diabetes',
+                              'Heart', 'Income', 'Jungle']:
         cfg['model']['task_mode'] = 'classification'
     else:
         raise ValueError('Not valid dataset name')

@@ -8,7 +8,7 @@ if __name__ == "__main__":
     stats_path = os.path.join('output', 'stats')
     dim = 1
     # data_names = ['Iris']
-    # data_names = ['Bank', 'Blood', 'CalHousingC', 'CalHousingR', 'Car', 'CreditG', 'Diabetes']
+    # data_names = ['Bank', 'Blood', 'CalHousingC', 'CalHousingR', 'Car', 'CreditG', 'Diabetes', 'Heart', 'Income', 'Jungle']
     data_names = []
     # eval_modes = ['0.9-holdout', '3-fold', '10-fold']
     eval_modes = ['3-fold']

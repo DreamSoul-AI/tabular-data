@@ -241,27 +241,15 @@ class CreditG(TabLLM):
 
 
 class Diabetes(TabLLM):
+    # https://www.kaggle.com/datasets/mathchi/diabetes-data-set
     data_name = 'Diabetes'
     raw_data_name = 'diabetes'
     feature_names = ['Pregnancies', 'Glucose', 'BloodPressure', 'SkinThickness', 'Insulin', 'BMI',
                      'DiabetesPedigreeFunction', 'Age']
 
     def make_data(self):
-        # dataset = pd.read_csv(data_dir / 'diabetes.csv')
-        # original_size = len(dataset)
-        # dataset = dataset.rename(columns={'Outcome': 'label'})
-        # dataset_train, dataset_valid, dataset_test = train_validation_test_split(dataset)
-        # assert len(dataset_train) + len(dataset_valid) + len(dataset_test) == original_size
-
         dataset = pd.read_csv(os.path.join(self.raw_folder, 'diabetes.csv'))
         dataset = dataset.rename(columns={'Outcome': 'label'})
-        # print(dataset)
-        # exit()
-        # dataset['label'] = dataset['label'].astype(int)
-        # for col in dataset.select_dtypes(include=['object']).columns:
-        #     le = LabelEncoder()
-        #     dataset[col] = le.fit_transform(dataset[col])
-        #     dataset[col] = dataset[col].astype(float)
         dataset = dataset.to_numpy()
         X, y = dataset[:, :-1], dataset[:, -1]
         data = X.astype(np.float32)
@@ -277,15 +265,102 @@ class Diabetes(TabLLM):
 
 
 class Heart(TabLLM):
-    data_name = 'heart'
+    # https://www.kaggle.com/datasets/fedesoriano/heart-failure-prediction
+    data_name = 'Heart'
+    raw_data_name = 'heart'
+    feature_names = ['Age', 'Sex', 'ChestPainType', 'RestingBP', 'Cholesterol', 'FastingBS', 'RestingECG', 'MaxHR',
+                     'ExerciseAngina', 'Oldpeak', 'ST_Slope']
+
+    def make_data(self):
+        dataset = pd.read_csv(os.path.join(self.raw_folder, 'heart.csv'))
+        dataset = dataset.rename(columns={'HeartDisease': 'label'})
+        for col in dataset.select_dtypes(include=['object']).columns:
+            le = LabelEncoder()
+            dataset[col] = le.fit_transform(dataset[col])
+            dataset[col] = dataset[col].astype(float)
+        dataset = dataset.to_numpy()
+        X, y = dataset[:, :-1], dataset[:, -1]
+        data = X.astype(np.float32)
+        target = y.astype(np.int64)
+        id = np.arange(len(data)).astype(np.int64)
+        data_set = (id, data, target)
+        classes = ['False', 'True']
+        classes_to_labels = {classes[i]: i for i in range(len(classes))}
+        input_size = list(X.shape[1:])
+        target_size = len(classes)
+        meta = {'input_size': input_size, 'target_size': target_size, 'classes_to_labels': classes_to_labels}
+        return data_set, meta
 
 
 class Income(TabLLM):
-    data_name = 'income'
+    # https://www.kaggle.com/datasets/uciml/adult-census-income
+    data_name = 'Income'
+    raw_data_name = 'income'
+    feature_names = ['age', 'workclass', 'education', 'marital_status', 'occupation',
+                     'relationship', 'race', 'sex', 'capital_gain', 'capital_loss', 'hours_per_week',
+                     'native_country', 'label']
+
+    def make_data(self):
+        names = ['age', 'workclass', 'fnlwgt', 'education', 'education_num', 'marital_status', 'occupation',
+                 'relationship', 'race', 'sex', 'capital_gain', 'capital_loss', 'hours_per_week',
+                 'native_country', 'label']
+
+        def strip_string_columns(df):
+            df[df.select_dtypes(['object']).columns] = df.select_dtypes(['object']).apply(lambda x: x.str.strip())
+
+        dataset_train = pd.read_csv(os.path.join(self.raw_folder, 'adult.data'), names=names, na_values=['?', ' ?'])
+        strip_string_columns(dataset_train)
+        dataset_train['label'] = dataset_train['label'] == '>50K'
+        dataset_test = pd.read_csv(os.path.join(self.raw_folder, 'adult.test'), names=names, na_values=['?', ' ?'])
+        strip_string_columns(dataset_test)
+        dataset_test['label'] = dataset_test['label'] == '>50K.'
+        dataset = pd.concat([dataset_train, dataset_test], axis=0)
+        dataset = dataset.drop(columns=['fnlwgt', 'education_num'])
+        dataset['label'] = dataset['label'].astype(int)
+        for col in dataset.select_dtypes(include=['object']).columns:
+            le = LabelEncoder()
+            dataset[col] = le.fit_transform(dataset[col])
+            dataset[col] = dataset[col].astype(float)
+        dataset = dataset.to_numpy()
+        X, y = dataset[:, :-1], dataset[:, -1]
+        data = X.astype(np.float32)
+        target = y.astype(np.int64)
+        id = np.arange(len(data)).astype(np.int64)
+        data_set = (id, data, target)
+        classes = ['False', 'True']
+        classes_to_labels = {classes[i]: i for i in range(len(classes))}
+        input_size = list(X.shape[1:])
+        target_size = len(classes)
+        meta = {'input_size': input_size, 'target_size': target_size, 'classes_to_labels': classes_to_labels}
+        return data_set, meta
 
 
 class Jungle(TabLLM):
-    data_name = 'jungle'
+    # https://k8sapi.openml.org/d/41027
+    data_name = 'Jungle'
+    raw_data_name = 'jungle'
+    feature_names = ['white_piece0_strength', 'white_piece0_file', 'white_piece0_rank', 'black_piece0_strength',
+                     'black_piece0_file', 'black_piece0_rank']
+
+    def make_data(self):
+        dataset = pd.DataFrame(arff.loadarff(os.path.join(self.raw_folder,
+                                                          'jungle_chess_2pcs_raw_endgame_complete.arff'))[0])
+        dataset = byte_to_string_columns(dataset)
+        dataset.rename(columns={'class': 'label'}, inplace=True)
+        dataset['label'] = dataset['label'] == 'w'  # Does white win?
+        dataset['label'] = dataset['label'].astype(int)
+        dataset = dataset.to_numpy()
+        X, y = dataset[:, :-1], dataset[:, -1]
+        data = X.astype(np.float32)
+        target = y.astype(np.int64)
+        id = np.arange(len(data)).astype(np.int64)
+        data_set = (id, data, target)
+        classes = ['False', 'True']
+        classes_to_labels = {classes[i]: i for i in range(len(classes))}
+        input_size = list(X.shape[1:])
+        target_size = len(classes)
+        meta = {'input_size': input_size, 'target_size': target_size, 'classes_to_labels': classes_to_labels}
+        return data_set, meta
 
 
 def byte_to_string_columns(data):
