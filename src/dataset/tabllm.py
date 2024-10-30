@@ -17,8 +17,8 @@ class TabLLM(Dataset):
         self.root = os.path.expanduser(root)
         self.split = split
         self.transform = transform
-        # if not check_exists(self.processed_folder):
-        self.process()
+        if not check_exists(self.processed_folder):
+            self.process()
         self.id, self.data, self.target = load(os.path.join(self.processed_folder, 'data'))
         self.classes_counts = make_classes_counts(self.target)
         self.meta = load(os.path.join(self.processed_folder, 'meta'))
@@ -65,6 +65,7 @@ class Bank(TabLLM):
     raw_data_name = 'bank'
     feature_names = ['age', 'job', 'marital', 'education', 'default', 'balance', 'housing', 'loan', 'contact', 'day',
                      'month', 'duration', 'campaign', 'pdays', 'previous', 'poutcome']
+    target_names = ['Class']
 
     def make_data(self):
         columns = {'V' + str(i + 1): v for i, v in enumerate(self.feature_names)}
@@ -97,6 +98,7 @@ class Blood(TabLLM):
     data_name = 'Blood'
     raw_data_name = 'blood'
     feature_names = ['recency', 'frequency', 'monetary', 'time']
+    target_names = ['Class']
 
     def make_data(self):
         columns = {'V' + str(i + 1): v for i, v in enumerate(self.feature_names)}
@@ -126,13 +128,14 @@ class CalHousingC(TabLLM):
     raw_data_name = 'calhousing'
     feature_names = ['median_income', 'housing_median_age', 'total_rooms', 'total_bedrooms', 'population', 'households',
                      'latitude', 'longitude']
+    target_names = ['median_house_value']
 
     def make_data(self):
         dataset = pd.DataFrame(arff.loadarff(os.path.join(self.raw_folder, 'houses.arff'))[0])
         dataset = byte_to_string_columns(dataset)
+        median_house_value = dataset.pop('median_house_value')
+        dataset['median_house_value'] = median_house_value
         dataset.rename(columns={'median_house_value': 'label'}, inplace=True)
-        label = dataset.pop('label')
-        dataset['label'] = label
         median_price = dataset['label'].median()
         dataset['label'] = dataset['label'] > median_price
         dataset['label'] = dataset['label'].astype(int)
@@ -156,15 +159,16 @@ class CalHousingR(TabLLM):
     raw_data_name = 'calhousing'
     feature_names = ['median_income', 'housing_median_age', 'total_rooms', 'total_bedrooms', 'population', 'households',
                      'latitude', 'longitude']
+    target_names = ['median_house_value']
 
     def make_data(self):
         dataset = pd.DataFrame(arff.loadarff(os.path.join(self.raw_folder, 'houses.arff'))[0])
         dataset = byte_to_string_columns(dataset)
+        median_house_value = dataset.pop('median_house_value')
+        dataset['median_house_value'] = median_house_value
         dataset.rename(columns={'median_house_value': 'label'}, inplace=True)
-        label = dataset.pop('label')
-        dataset['label'] = label
         dataset = dataset.to_numpy()
-        X, y = dataset[:, :-1], dataset[:, -1]
+        X, y = dataset[:, :-1], dataset[:, [-1]]
         data = X.astype(np.float32)
         target = y.astype(np.float32)
         id = np.arange(len(data)).astype(np.int64)
@@ -180,6 +184,7 @@ class Car(TabLLM):
     data_name = 'Car'
     raw_data_name = 'car'
     feature_names = ['buying', 'maint', 'doors', 'persons', 'lug_boot', 'safety_dict', 'label']
+    target_names = ['label']
 
     def make_data(self):
         dataset = pd.read_csv(os.path.join(self.raw_folder, 'car.data'), names=self.feature_names)
@@ -215,6 +220,7 @@ class CreditG(TabLLM):
         'age', 'other_payment_plans', 'housing', 'existing_credits',
         'job', 'num_dependents', 'own_telephone', 'foreign_worker'
     ]
+    target_names = ['class']
 
     def make_data(self):
         dataset = pd.DataFrame(arff.loadarff(os.path.join(self.raw_folder, 'dataset_31_credit-g.arff'))[0])
@@ -246,6 +252,7 @@ class Diabetes(TabLLM):
     raw_data_name = 'diabetes'
     feature_names = ['Pregnancies', 'Glucose', 'BloodPressure', 'SkinThickness', 'Insulin', 'BMI',
                      'DiabetesPedigreeFunction', 'Age']
+    target_names = ['Outcome']
 
     def make_data(self):
         dataset = pd.read_csv(os.path.join(self.raw_folder, 'diabetes.csv'))
@@ -270,6 +277,7 @@ class Heart(TabLLM):
     raw_data_name = 'heart'
     feature_names = ['Age', 'Sex', 'ChestPainType', 'RestingBP', 'Cholesterol', 'FastingBS', 'RestingECG', 'MaxHR',
                      'ExerciseAngina', 'Oldpeak', 'ST_Slope']
+    target_names = ['HeartDisease']
 
     def make_data(self):
         dataset = pd.read_csv(os.path.join(self.raw_folder, 'heart.csv'))
@@ -298,7 +306,8 @@ class Income(TabLLM):
     raw_data_name = 'income'
     feature_names = ['age', 'workclass', 'education', 'marital_status', 'occupation',
                      'relationship', 'race', 'sex', 'capital_gain', 'capital_loss', 'hours_per_week',
-                     'native_country', 'label']
+                     'label', 'label']
+    target_names = ['label']
 
     def make_data(self):
         names = ['age', 'workclass', 'fnlwgt', 'education', 'education_num', 'marital_status', 'occupation',
@@ -341,6 +350,7 @@ class Jungle(TabLLM):
     raw_data_name = 'jungle'
     feature_names = ['white_piece0_strength', 'white_piece0_file', 'white_piece0_rank', 'black_piece0_strength',
                      'black_piece0_file', 'black_piece0_rank']
+    target_names = ['class']
 
     def make_data(self):
         dataset = pd.DataFrame(arff.loadarff(os.path.join(self.raw_folder,

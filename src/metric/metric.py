@@ -5,14 +5,15 @@ import torch.nn.functional as F
 def make_metric(split, **kwargs):
     data_name = kwargs['data_name']
     metric_name = {k: [] for k in split}
-    if data_name in ['Diabetes']:
+    if data_name in ['CalHousingR']:
         best_direction = 'down'
         best_metric_name = 'Loss'
         for k in metric_name:
             metric_name[k].extend(['Loss', 'MSE'])
             if k == 'test':
                 metric_name[k].extend(['RMSE', 'R2'])
-    elif data_name in ['Iris']:
+    elif data_name in ['Bank', 'Blood', 'CalHousingC', 'Car', 'CreditG', 'Diabetes',
+                              'Heart', 'Income', 'Jungle']:
         best_direction = 'down'
         best_metric_name = 'Loss'
         for k in metric_name:

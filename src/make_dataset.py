@@ -7,11 +7,11 @@ from module import save, Stats, makedir_exist_ok, process_control
 if __name__ == "__main__":
     stats_path = os.path.join('output', 'stats')
     dim = 1
-    # data_names = ['Iris']
-    # data_names = ['Bank', 'Blood', 'CalHousingC', 'CalHousingR', 'Car', 'CreditG', 'Diabetes', 'Heart', 'Income', 'Jungle']
-    data_names = []
-    # eval_modes = ['0.9-holdout', '3-fold', '10-fold']
-    eval_modes = ['3-fold']
+    data_names = ['Bank', 'Blood', 'CalHousingC', 'CalHousingR', 'Car', 'CreditG', 'Diabetes', 'Heart', 'Income',
+                  'Jungle']
+    # data_names = ['CalHousingR']
+    eval_modes = ['0.9-holdout', '3-fold', '10-fold']
+    # eval_modes = ['0.9-holdout']
     cfg['seed'] = 0
     cfg['tag'] = 'make_dataset'
     cfg['make_stats'] = True
