@@ -6,7 +6,6 @@ from scipy.io import arff
 from sklearn.preprocessing import LabelEncoder
 from torch.utils.data import Dataset
 from module import check_exists, makedir_exist_ok, save, load
-from .utils import make_classes_counts
 
 
 class TabLLM(Dataset):
@@ -20,8 +19,9 @@ class TabLLM(Dataset):
         if not check_exists(self.processed_folder):
             self.process()
         self.id, self.data, self.target = load(os.path.join(self.processed_folder, 'data'))
-        self.classes_counts = make_classes_counts(self.target)
         self.meta = load(os.path.join(self.processed_folder, 'meta'))
+        self.data_size = self.meta['data_size']
+        self.target_size = self.meta['target_size']
 
     def __getitem__(self, index):
         id, data, target = torch.tensor(self.id[index]), torch.tensor(self.data[index]), torch.tensor(
@@ -87,9 +87,9 @@ class Bank(TabLLM):
         data_set = (id, data, target)
         classes = ['False', 'True']
         classes_to_labels = {classes[i]: i for i in range(len(classes))}
-        input_size = list(X.shape[1:])
+        data_size = list(X.shape[1:])
         target_size = len(classes)
-        meta = {'input_size': input_size, 'target_size': target_size, 'classes_to_labels': classes_to_labels}
+        meta = {'data_size': data_size, 'target_size': target_size, 'classes_to_labels': classes_to_labels}
         return data_set, meta
 
 
@@ -116,9 +116,9 @@ class Blood(TabLLM):
         data_set = (id, data, target)
         classes = ['False', 'True']
         classes_to_labels = {classes[i]: i for i in range(len(classes))}
-        input_size = list(X.shape[1:])
+        data_size = list(X.shape[1:])
         target_size = len(classes)
-        meta = {'input_size': input_size, 'target_size': target_size, 'classes_to_labels': classes_to_labels}
+        meta = {'data_size': data_size, 'target_size': target_size, 'classes_to_labels': classes_to_labels}
         return data_set, meta
 
 
@@ -147,9 +147,9 @@ class CalHousingC(TabLLM):
         data_set = (id, data, target)
         classes = ['low', 'high']
         classes_to_labels = {classes[i]: i for i in range(len(classes))}
-        input_size = list(X.shape[1:])
+        data_size = list(X.shape[1:])
         target_size = len(classes)
-        meta = {'input_size': input_size, 'target_size': target_size, 'classes_to_labels': classes_to_labels}
+        meta = {'data_size': data_size, 'target_size': target_size, 'classes_to_labels': classes_to_labels}
         return data_set, meta
 
 
@@ -173,9 +173,9 @@ class CalHousingR(TabLLM):
         target = y.astype(np.float32)
         id = np.arange(len(data)).astype(np.int64)
         data_set = (id, data, target)
-        input_size = list(X.shape[1:])
+        data_size = list(X.shape[1:])
         target_size = 1
-        meta = {'input_size': input_size, 'target_size': target_size}
+        meta = {'data_size': data_size, 'target_size': target_size}
         return data_set, meta
 
 
@@ -203,9 +203,9 @@ class Car(TabLLM):
         data_set = (id, data, target)
         classes = ['unacc', 'acc', 'good', 'vgood']
         classes_to_labels = {classes[i]: i for i in range(len(classes))}
-        input_size = list(X.shape[1:])
+        data_size = list(X.shape[1:])
         target_size = len(classes)
-        meta = {'input_size': input_size, 'target_size': target_size, 'classes_to_labels': classes_to_labels}
+        meta = {'data_size': data_size, 'target_size': target_size, 'classes_to_labels': classes_to_labels}
         return data_set, meta
 
 
@@ -240,9 +240,9 @@ class CreditG(TabLLM):
         data_set = (id, data, target)
         classes = ['bad', 'good']
         classes_to_labels = {classes[i]: i for i in range(len(classes))}
-        input_size = list(X.shape[1:])
+        data_size = list(X.shape[1:])
         target_size = len(classes)
-        meta = {'input_size': input_size, 'target_size': target_size, 'classes_to_labels': classes_to_labels}
+        meta = {'data_size': data_size, 'target_size': target_size, 'classes_to_labels': classes_to_labels}
         return data_set, meta
 
 
@@ -265,9 +265,9 @@ class Diabetes(TabLLM):
         data_set = (id, data, target)
         classes = ['False', 'True']
         classes_to_labels = {classes[i]: i for i in range(len(classes))}
-        input_size = list(X.shape[1:])
+        data_size = list(X.shape[1:])
         target_size = len(classes)
-        meta = {'input_size': input_size, 'target_size': target_size, 'classes_to_labels': classes_to_labels}
+        meta = {'data_size': data_size, 'target_size': target_size, 'classes_to_labels': classes_to_labels}
         return data_set, meta
 
 
@@ -294,9 +294,9 @@ class Heart(TabLLM):
         data_set = (id, data, target)
         classes = ['False', 'True']
         classes_to_labels = {classes[i]: i for i in range(len(classes))}
-        input_size = list(X.shape[1:])
+        data_size = list(X.shape[1:])
         target_size = len(classes)
-        meta = {'input_size': input_size, 'target_size': target_size, 'classes_to_labels': classes_to_labels}
+        meta = {'data_size': data_size, 'target_size': target_size, 'classes_to_labels': classes_to_labels}
         return data_set, meta
 
 
@@ -338,9 +338,9 @@ class Income(TabLLM):
         data_set = (id, data, target)
         classes = ['False', 'True']
         classes_to_labels = {classes[i]: i for i in range(len(classes))}
-        input_size = list(X.shape[1:])
+        data_size = list(X.shape[1:])
         target_size = len(classes)
-        meta = {'input_size': input_size, 'target_size': target_size, 'classes_to_labels': classes_to_labels}
+        meta = {'data_size': data_size, 'target_size': target_size, 'classes_to_labels': classes_to_labels}
         return data_set, meta
 
 
@@ -367,9 +367,9 @@ class Jungle(TabLLM):
         data_set = (id, data, target)
         classes = ['False', 'True']
         classes_to_labels = {classes[i]: i for i in range(len(classes))}
-        input_size = list(X.shape[1:])
+        data_size = list(X.shape[1:])
         target_size = len(classes)
-        meta = {'input_size': input_size, 'target_size': target_size, 'classes_to_labels': classes_to_labels}
+        meta = {'data_size': data_size, 'target_size': target_size, 'classes_to_labels': classes_to_labels}
         return data_set, meta
 
 

@@ -13,7 +13,7 @@ def make_dataset(data_name, eval_mode=None, verbose=True):
     if verbose:
         print('fetching data {}...'.format(data_name))
     if data_name in ['Bank', 'Blood', 'CalHousingC', 'CalHousingR', 'Car', 'CreditG', 'Diabetes', 'Heart', 'Income',
-                       'Jungle']:
+                     'Jungle']:
         root = os.path.join('data', 'TabLLM')
         raw_dataset = eval('dataset.{}(root=root)'.format(data_name))
     else:
@@ -103,7 +103,9 @@ def make_data_loader(dataset, batch_size, num_steps=None, step=0, step_period=1,
 
 def process_dataset(dataset):
     processed_dataset = dataset
-    cfg['data_size'] = {k: len(processed_dataset[k]) for k in processed_dataset}
+    cfg['sample_size'] = {k: len(processed_dataset[k]) for k in processed_dataset}
+    cfg['model']['data_size'] = processed_dataset['train'].data_size
+    cfg['model']['target_size'] = processed_dataset['train'].target_size
     if 'num_epochs' in cfg:
         cfg['num_steps'] = int(np.ceil(len(processed_dataset['train']) / cfg['batch_size'])) * cfg['num_epochs']
         cfg['eval_period'] = int(np.ceil(len(processed_dataset['train']) / cfg['batch_size']))

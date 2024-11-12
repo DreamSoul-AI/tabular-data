@@ -287,9 +287,9 @@ class KAN(torch.nn.Module):
 
 
 def kan(cfg):
-    data_shape = cfg['data_shape']
+    data_size = cfg['data_size']
     hidden_size = cfg['kan']['hidden_size']
     target_size = cfg['target_size']
-    layers_hidden = data_shape + hidden_size + [target_size]
+    layers_hidden = data_size + hidden_size + [target_size]
     model = KAN(layers_hidden)
     return model

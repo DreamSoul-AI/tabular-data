@@ -75,8 +75,8 @@ def runExperiment():
         test_logger = make_logger(cfg['logger_path'], data_name=cfg['data_name'], run_mode=cfg['run_mode'])
         best_model = copy.deepcopy(model_i)
         while cfg['step'] < cfg['num_steps']:
-            train(data_loader['train'], model_i, optimizer_i, scheduler_i, test_logger, i, True)
-            test(data_loader['test'], model_i, test_logger, i, 'batch')
+            train(data_loader['train'], model_i, optimizer_i, scheduler_i, test_logger, i, False)
+            test(data_loader['test'], model_i, test_logger, i, 'batch', True)
             if test_logger.compare('train'):
                 best_model.load_state_dict(copy.deepcopy(model_i.state_dict()))
             test_logger.reset()
