@@ -22,6 +22,11 @@ class TabLLM(Dataset):
         self.meta = load(os.path.join(self.processed_folder, 'meta'))
         self.data_size = self.meta['data_size']
         self.target_size = self.meta['target_size']
+        if os.path.exists(os.path.join(self.raw_folder, '{}.txt'.format(self.data_name))):
+            with open(os.path.join(self.raw_folder, '{}.txt'.format(self.data_name)), 'r') as file:
+                self.description = file.read()
+        else:
+            self.description = None
 
     def __getitem__(self, index):
         id, data, target = torch.tensor(self.id[index]), torch.tensor(self.data[index]), torch.tensor(

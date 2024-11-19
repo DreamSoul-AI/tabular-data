@@ -1,0 +1,49 @@
+Title  
+Bank Marketing  
+
+Description  
+The dataset contains information on direct marketing campaigns conducted by a Portuguese banking institution. Campaigns were phone-based and could involve multiple calls to the same client to determine if the client would subscribe to a term deposit. The dataset spans from May 2008 to November 2010.  
+
+Details  
+- Number of Instances: 45,211  
+- Number of Attributes: 16 input attributes + 1 output attribute  
+
+Objective  
+Predict whether a client will subscribe to a term deposit (output variable: y).  
+
+Attributes  
+
+Input Variables:  
+1. age: Client's age (numeric).  
+2. job: Type of job (categorical).  
+   Categories: "admin.", "unknown", "unemployed", "management", "housemaid", "entrepreneur", "student", "blue-collar", "self-employed", "retired", "technician", "services".  
+3. marital: Marital status (categorical).  
+   Categories: "married", "divorced" (includes widowed), "single".  
+4. education: Education level (categorical).  
+   Categories: "unknown", "secondary", "primary", "tertiary".  
+5. default: Has credit in default? (binary).  
+   Values: "yes", "no".  
+6. balance: Average yearly balance in euros (numeric).  
+7. housing: Has a housing loan? (binary).  
+   Values: "yes", "no".  
+8. loan: Has a personal loan? (binary).  
+   Values: "yes", "no".  
+9. contact: Communication type for last contact (categorical).  
+   Categories: "unknown", "telephone", "cellular".  
+10. day: Day of the month for the last contact (numeric).  
+11. month: Month of the year for the last contact (categorical).  
+    Categories: "jan", "feb", "mar", ..., "nov", "dec".  
+12. duration: Duration of the last contact in seconds (numeric).  
+13. campaign: Number of contacts performed during this campaign (numeric).  
+14. pdays: Number of days since the client was last contacted from a previous campaign (numeric, -1 if not previously contacted).  
+15. previous: Number of contacts performed before this campaign (numeric).  
+16. poutcome: Outcome of the previous marketing campaign (categorical).  
+    Categories: "unknown", "other", "failure", "success".  
+
+Output Variable:  
+17. y: Has the client subscribed to a term deposit? (binary).  
+    Values: "yes", "no".  
+
+Notes  
+- Missing Attribute Values: None.  
+- This dataset is suitable for binary classification tasks.  
