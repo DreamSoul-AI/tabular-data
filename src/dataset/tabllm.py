@@ -65,12 +65,14 @@ class TabLLM(Dataset):
 
 
 class Bank(TabLLM):
+    # https://archive.ics.uci.edu/dataset/222/bank+marketing
     # https://www.kaggle.com/datasets/sonujha090/bank-marketing
+
     data_name = 'Bank'
     raw_data_name = 'bank'
     feature_names = ['age', 'job', 'marital', 'education', 'default', 'balance', 'housing', 'loan', 'contact', 'day',
                      'month', 'duration', 'campaign', 'pdays', 'previous', 'poutcome']
-    target_names = ['Class']
+    target_names = ['deposit']
 
     def make_data(self):
         columns = {'V' + str(i + 1): v for i, v in enumerate(self.feature_names)}
@@ -99,11 +101,13 @@ class Bank(TabLLM):
 
 
 class Blood(TabLLM):
-    # https://www.kaggle.com/datasets/mmmarchetti/transfusion-dataset
+    # https://archive.ics.uci.edu/dataset/176/blood+transfusion+service+center
+    # https://www.kaggle.com/datasets/ninalabiba/blood-transfusion-dataset
+
     data_name = 'Blood'
     raw_data_name = 'blood'
     feature_names = ['recency', 'frequency', 'monetary', 'time']
-    target_names = ['Class']
+    target_names = ['donate']
 
     def make_data(self):
         columns = {'V' + str(i + 1): v for i, v in enumerate(self.feature_names)}

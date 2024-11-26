@@ -1,49 +1,91 @@
-Title  
-Bank Marketing  
+Bank Marketing
+Donated on 2/13/2012
+The data is related with direct marketing campaigns (phone calls) of a Portuguese banking institution. The classification goal is to predict if the client will subscribe a term deposit (variable y).
 
-Description  
-The dataset contains information on direct marketing campaigns conducted by a Portuguese banking institution. Campaigns were phone-based and could involve multiple calls to the same client to determine if the client would subscribe to a term deposit. The dataset spans from May 2008 to November 2010.  
+Dataset Characteristics
+Multivariate
 
-Details  
-- Number of Instances: 45,211  
-- Number of Attributes: 16 input attributes + 1 output attribute  
+Subject Area
+Business
 
-Objective  
-Predict whether a client will subscribe to a term deposit (output variable: y).  
+Associated Tasks
+Classification
 
-Attributes  
+Feature Type
+Categorical, Integer
 
-Input Variables:  
-1. age: Client's age (numeric).  
-2. job: Type of job (categorical).  
-   Categories: "admin.", "unknown", "unemployed", "management", "housemaid", "entrepreneur", "student", "blue-collar", "self-employed", "retired", "technician", "services".  
-3. marital: Marital status (categorical).  
-   Categories: "married", "divorced" (includes widowed), "single".  
-4. education: Education level (categorical).  
-   Categories: "unknown", "secondary", "primary", "tertiary".  
-5. default: Has credit in default? (binary).  
-   Values: "yes", "no".  
-6. balance: Average yearly balance in euros (numeric).  
-7. housing: Has a housing loan? (binary).  
-   Values: "yes", "no".  
-8. loan: Has a personal loan? (binary).  
-   Values: "yes", "no".  
-9. contact: Communication type for last contact (categorical).  
-   Categories: "unknown", "telephone", "cellular".  
-10. day: Day of the month for the last contact (numeric).  
-11. month: Month of the year for the last contact (categorical).  
-    Categories: "jan", "feb", "mar", ..., "nov", "dec".  
-12. duration: Duration of the last contact in seconds (numeric).  
-13. campaign: Number of contacts performed during this campaign (numeric).  
-14. pdays: Number of days since the client was last contacted from a previous campaign (numeric, -1 if not previously contacted).  
-15. previous: Number of contacts performed before this campaign (numeric).  
-16. poutcome: Outcome of the previous marketing campaign (categorical).  
-    Categories: "unknown", "other", "failure", "success".  
+# Instances
+45211
 
-Output Variable:  
-17. y: Has the client subscribed to a term deposit? (binary).  
-    Values: "yes", "no".  
+# Features
+16
 
-Notes  
-- Missing Attribute Values: None.  
-- This dataset is suitable for binary classification tasks.  
+Dataset Information
+Additional Information
+
+The data is related with direct marketing campaigns of a Portuguese banking institution. The marketing campaigns were based on phone calls. Often, more than one contact to the same client was required, in order to access if the product (bank term deposit) would be ('yes') or not ('no') subscribed. 
+
+There are four datasets: 
+1) bank-additional-full.csv with all examples (41188) and 20 inputs, ordered by date (from May 2008 to November 2010), very close to the data analyzed in [Moro et al., 2014]
+2) bank-additional.csv with 10% of the examples (4119), randomly selected from 1), and 20 inputs.
+3) bank-full.csv with all examples and 17 inputs, ordered by date (older version of this dataset with less inputs). 
+4) bank.csv with 10% of the examples and 17 inputs, randomly selected from 3 (older version of this dataset with less inputs). 
+The smallest datasets are provided to test more computationally demanding machine learning algorithms (e.g., SVM). 
+
+The classification goal is to predict if the client will subscribe (yes/no) a term deposit (variable y).
+
+Has Missing Values?
+
+No
+
+Introductory Paper
+A data-driven approach to predict the success of bank telemarketing
+By Sérgio Moro, P. Cortez, P. Rita. 2014
+
+Variables Table
+| Variable Name   | Role  | Type      | Demographic  | Description | Units | Missing Values |
+|-----------------|-------|-----------|--------------|-------------|-------|----------------|
+| age             | Feature   | Integer       | Age              | -               | -         | No                 |
+| job             | Feature   | Categorical   | Occupation       | Type of job (categorical: 'admin', 'blue-collar', 'entrepreneur', 'housemaid', 'management', 'retired', 'self-employed', 'services', 'student', 'technician', 'unemployed', 'unknown') | - | No                 |
+| marital         | Feature   | Categorical   | Marital Status   | Marital status (categorical: 'divorced', 'married', 'single', 'unknown'; note: 'divorced' means divorced or widowed) | - | No                 |
+| education       | Feature   | Categorical   | Education Level  | Education level (categorical: 'basic.4y', 'basic.6y', 'basic.9y', 'high.school', 'illiterate', 'professional.course', 'university.degree', 'unknown') | - | No                 |
+| default         | Feature   | Binary        | -                | Has credit in default? (binary: 'yes', 'no') | - | No                 |
+| balance         | Feature   | Integer       | -                | Average yearly balance (numeric, in euros) | euros | No                 |
+| housing         | Feature   | Binary        | -                | Has housing loan? (binary: 'yes', 'no') | - | No                 |
+| loan            | Feature   | Binary        | -                | Has personal loan? (binary: 'yes', 'no') | - | No                 |
+| contact         | Feature   | Categorical   | -                | Contact communication type (categorical: 'cellular', 'telephone') | - | Yes                |
+| day_of_week     | Feature   | Date          | -                | Last contact day of the week (numeric) | - | No                 |
+| month           | Feature   | Date          | -                | Last contact month of the year (categorical: 'jan', 'feb', 'mar', ..., 'nov', 'dec') | - | No                 |
+| duration        | Feature   | Integer       | -                | Last contact duration, in seconds (numeric). Important note: this attribute highly affects the output target (e.g., if duration=0 then y='no'). This should be discarded for realistic predictive models. | seconds | No                 |
+| campaign        | Feature   | Integer       | -                | Number of contacts performed during this campaign for this client (numeric, includes last contact) | - | No                 |
+| pdays           | Feature   | Integer       | -                | Number of days passed after the client was last contacted from a previous campaign (numeric; -1 means client was not previously contacted) | days | Yes                |
+| previous        | Feature   | Integer       | -                | Number of contacts performed before this campaign for this client (numeric) | - | No                 |
+| poutcome        | Feature   | Categorical   | -                | Outcome of the previous marketing campaign (categorical: 'failure', 'nonexistent', 'success') | - | Yes                |
+| y               | Target    | Binary        | -                | Has the client subscribed to a term deposit? (binary: 'yes', 'no') | - | No                 |
+
+Additional Variable Information
+Input variables:
+   # bank client data:
+   1 - age (numeric)
+   2 - job : type of job (categorical: "admin.","unknown","unemployed","management","housemaid","entrepreneur","student",
+                                       "blue-collar","self-employed","retired","technician","services") 
+   3 - marital : marital status (categorical: "married","divorced","single"; note: "divorced" means divorced or widowed)
+   4 - education (categorical: "unknown","secondary","primary","tertiary")
+   5 - default: has credit in default? (binary: "yes","no")
+   6 - balance: average yearly balance, in euros (numeric) 
+   7 - housing: has housing loan? (binary: "yes","no")
+   8 - loan: has personal loan? (binary: "yes","no")
+   # related with the last contact of the current campaign:
+   9 - contact: contact communication type (categorical: "unknown","telephone","cellular") 
+  10 - day: last contact day of the month (numeric)
+  11 - month: last contact month of year (categorical: "jan", "feb", "mar", ..., "nov", "dec")
+  12 - duration: last contact duration, in seconds (numeric)
+   # other attributes:
+  13 - campaign: number of contacts performed during this campaign and for this client (numeric, includes last contact)
+  14 - pdays: number of days that passed by after the client was last contacted from a previous campaign (numeric, -1 means client was not previously contacted)
+  15 - previous: number of contacts performed before this campaign and for this client (numeric)
+  16 - poutcome: outcome of the previous marketing campaign (categorical: "unknown","other","failure","success")
+
+Output variable (desired target):
+  17 - y - has the client subscribed a term deposit? (binary: "yes","no")
+
