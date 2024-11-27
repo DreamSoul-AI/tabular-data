@@ -21,12 +21,9 @@ Real
 4
 
 Dataset Information
-Additional Information
-
 To demonstrate the RFMTC marketing model (a modified version of RFM), this study adopted the donor database of Blood Transfusion Service Center in Hsin-Chu City in Taiwan. The center passes their blood transfusion service bus to one university in Hsin-Chu City to gather blood donated about every three months. To build a FRMTC model, we selected 748 donors at random from the donor database. These 748 donor data, each one included R (Recency - months since last donation), F (Frequency - total number of donation), M (Monetary - total blood donated in c.c.), T (Time - months since first donation), and a binary variable representing whether he/she donated blood in March 2007 (1 stand for donating blood; 0 stands for not donating blood). 
 
 Has Missing Values?
-
 No
 
 Introductory Paper
@@ -34,7 +31,6 @@ Knowledge discovery on RFM model using Bernoulli sequence
 By I. Yeh, K. Yang, Tao-Ming Ting. 2009
 
 Variables Table
-### Variables Table
 
 | Variable Name     | Role     | Type     | Description                                                      | Units  | Missing Values |
 |-------------------|----------|----------|------------------------------------------------------------------|--------|----------------|
@@ -54,10 +50,7 @@ T (Time - months since first donation), and
 a binary variable representing whether he/she donated blood in March 2007 (1 stand for donating blood; 0 stands for not donating blood). 
 
 
-Table 1 shows the descriptive statistics of the data. We selected 500 data at random as the training set, and the rest 248 as the testing set.
-
-Table 1. Descriptive statistics of the data
-
+Table 1 Descriptive statistics of the data. We selected 500 data at random as the training set, and the rest 248 as the testing set.
 | Variable                                  | Data Type    | Measurement  | Description                              | Min   | Max    | Mean     | Std Dev  |
 |------------------------------------------|-------------|--------------|------------------------------------------|-------|--------|----------|----------|
 | Recency                                   | Quantitative | Months       | Input                                    | 0.03  | 74.4   | 9.74     | 8.07     |

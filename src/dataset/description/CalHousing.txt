@@ -1,0 +1,58 @@
+California Housing Prices
+Donated on 1990
+The dataset contains median house prices for California districts derived from the 1990 census.
+
+Dataset Characteristics
+Multivariate
+
+Subject Area
+Social Science, Real Estate
+
+Associated Tasks
+Regression, Classification
+
+Feature Type
+Continuous, Integer
+
+# Instances
+20,640
+
+# Features
+10
+
+Dataset Information
+The California Housing Prices dataset is based on the 1990 U.S. Census and provides information on housing prices and related statistics for districts in California. This dataset serves as an introductory dataset for machine learning tasks, particularly regression. The task is to predict the median house value based on various features related to housing and demographic information.
+
+There are 10 features in total, 9 of which are input features and 1 is the target variable.
+
+Features:
+1) longitude: A measure of how far west a house is; a higher value indicates farther west (numeric)
+2) latitude: A measure of how far north a house is; a higher value indicates farther north (numeric)
+3) housing_median_age: Median age of a house within a district (numeric)
+4) total_rooms: Total number of rooms within a district (numeric)
+5) total_bedrooms: Total number of bedrooms within a district (numeric)
+6) population: Total number of people residing within a district (numeric)
+7) households: Total number of households (numeric)
+8) median_income: Median income for households within a district (in tens of thousands of US Dollars)
+9) median_house_value: Median house value for households within a district (US Dollars)
+10) ocean_proximity: Location of the house relative to the ocean (categorical: 'NEAR BAY', 'NEAR OCEAN', 'INLAND', 'ISLAND', 'LATIN AMERICA')
+
+Has Missing Values?
+No
+
+Introductory Paper
+Pace, R. Kelley and Ronald Barry, Sparse Spatial Autoregressions, Statistics and Probability Letters, 33 (1997) 291-297.
+
+Variable Table
+| Variable Name       | Role     | Type        | Description                                         | Units                 | Missing Values |
+|---------------------|----------|-------------|-----------------------------------------------------|-----------------------|----------------|
+| longitude           | Feature  | Continuous  | Longitude coordinate of the district                | degrees               | No             |
+| latitude            | Feature  | Continuous  | Latitude coordinate of the district                 | degrees               | No             |
+| housing_median_age  | Feature  | Continuous  | Median age of houses in the district                | years                 | No             |
+| total_rooms         | Feature  | Continuous  | Total number of rooms in the district               | count                 | No             |
+| total_bedrooms      | Feature  | Continuous  | Total number of bedrooms in the district            | count                 | No             |
+| population          | Feature  | Continuous  | Population in the district                          | people                | No             |
+| households          | Feature  | Continuous  | Number of households in the district                | count                 | No             |
+| median_income       | Feature  | Continuous  | Median income of the district (in tens of thousands) | USD                   | No             |
+| median_house_value  | Target   | Continuous  | Median house value for the district                 | USD                   | No             |
+| ocean_proximity     | Feature  | Categorical | Proximity to the ocean ('NEAR BAY', 'NEAR OCEAN', 'INLAND', 'ISLAND', 'LATIN AMERICA') | -                     | No             |
