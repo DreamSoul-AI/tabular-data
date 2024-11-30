@@ -1,0 +1,59 @@
+Diabetes
+Donated on 9/5/1990
+The data is related to predicting the presence of diabetes in female patients based on diagnostic measurements. The classification goal is to predict whether a patient has diabetes (binary outcome: 0 or 1).
+
+Dataset Characteristics
+Multivariate
+
+Subject Area
+Health
+
+Associated Tasks
+Classification
+
+Feature Type
+Categorical, Integer, Numeric
+
+Instances
+768
+
+Features
+8
+
+Dataset Information
+This dataset originates from the National Institute of Diabetes and Digestive and Kidney Diseases. It focuses on a subset of female patients, at least 21 years old, of Pima Indian heritage, residing near Phoenix, Arizona, USA. The goal of the dataset is to predict whether a patient has diabetes based on various diagnostic measurements.
+The outcome variable is binary, where:
+1 indicates the patient has diabetes (based on World Health Organization criteria: 2-hour post-load plasma glucose ≥ 200 mg/dl at any survey examination or during routine medical care).
+0 indicates the patient does not have diabetes.
+In the original study, the ADAP learning algorithm was employed to forecast the onset of diabetes. The algorithm generates a real-valued prediction between 0 and 1, which is transformed into a binary decision using a cutoff value of 0.448. With 576 training instances, the algorithm achieved a sensitivity and specificity of 76% when tested on the remaining 192 instances.
+
+Has Missing Values?
+No
+
+Introductory Paper:
+Smith, J. W., Everhart, J. E., Dickson, W. C., Knowler, W. C., & Johannes, R. S. (1988). Using the ADAP learning algorithm to forecast the onset of diabetes mellitus. In Proceedings of the Symposium on Computer Applications and Medical Care (pp. 261-265). IEEE Computer Society Press.
+
+Variables Table
+| Variable Name            | Role    | Type    | Demographic | Description                                                | Units   | Missing Values |
+|--------------------------|---------|---------|-------------|------------------------------------------------------------|---------|----------------|
+| pregnancies              | Feature | Integer | -           | Number of times pregnant                                   | -       | No             |
+| glucose                  | Feature | Integer | -           | Plasma glucose concentration 2 hours after an oral glucose tolerance test | mg/dl   | No             |
+| bloodPressure            | Feature | Integer | -           | Diastolic blood pressure                                    | mm Hg   | No             |
+| skinThickness            | Feature | Integer | -           | Triceps skin fold thickness                                 | mm      | No             |
+| insulin                  | Feature | Integer | -           | 2-Hour serum insulin                                        | mu U/ml | No             |
+| BMI                      | Feature | Integer | -           | Body mass index (weight in kg/(height in m)^2)              | kg/m²   | No             |
+| diabetesPedigreeFunction | Feature | Numeric | -           | Diabetes pedigree function                                  | -       | No             |
+| age                      | Feature | Integer | -           | Age in years                                                | -       | No             |
+| outcome                  | Target  | Binary  | -           | Class variable indicating whether the patient has diabetes | 0 or 1  | No             |
+
+
+Additional Variable Information
+pregnancies: Number of times pregnant (integer).
+glucose: Plasma glucose concentration 2 hours after an oral glucose tolerance test (integer, mg/dl).
+bloodPressure: Diastolic blood pressure (integer, mm Hg).
+skinThickness: Triceps skin fold thickness (integer, mm).
+insulin: 2-Hour serum insulin (integer, mu U/ml).
+BMI: Body mass index (integer, kg/m²).
+diabetesPedigreeFunction: Diabetes pedigree function (numeric).
+age: Age (integer, years).
+outcome: 0 or 1 (binary, indicating if the patient has diabetes).
