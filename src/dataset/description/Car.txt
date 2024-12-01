@@ -18,7 +18,7 @@ Categorical
 1728
 
 # Features
-6
+7
 
 Dataset Information
 Car Evaluation Database was derived from a simple hierarchical decision model originally developed for the demonstration of DEX, M. Bohanec, V. Rajkovic: Expert system for decision making. Sistemica 1(1), pp. 145-157, 1990.). The model evaluates cars according to the following concept structure:
@@ -60,12 +60,12 @@ Variables Table
 | class         | Target | Categorical| evaluation level (unacceptable, acceptable, good, very good) |               | no             |
 
 Additional Variable Information
-buying:   vhigh, high, med, low.
-maint:    vhigh, high, med, low.
-doors:    2, 3, 4, 5more.
-persons:  2, 4, more.
-lug_boot: small, med, big.
-safety:   low, med, high.
-
-Class Labels
-unacc, acc, good, vgood
+Input variables:
+	1 - buying:   vhigh, high, med, low.
+	2 - maint:    vhigh, high, med, low.
+	3 - doors:    2, 3, 4, 5more.
+	4 - persons:  2, 4, more.
+	5 - lug_boot: small, med, big.
+	6 - safety:   low, med, high.
+Target variable:
+	7 - class: unacc, acc, good, vgood

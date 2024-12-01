@@ -18,7 +18,7 @@ Categorical, Integer
 1000
 
 # Features
-20
+11
 
 Dataset Information
 This dataset is used to classify people as good or bad credit risks based on various attributes such as checking account status, credit history, purpose of the credit, and personal data. The dataset contains several features that require data cleaning, making it an excellent choice for practicing data preprocessing and feature engineering.
@@ -40,26 +40,26 @@ Variables Table
 
 Additional Variable Information
 Input variables:
-1. checking_status: Status of the existing checking account  
-   - Categorical: "no checking", "<0", "0<=X<200", ">=200"
-2. duration: Duration of the credit  
-   - Numeric, in months
-3. credit_history: History of credit  
-   - Categorical: "critical/other existing credit", "existing paid", "delayed previously", "no credits/all paid", "all paid", "none"
-4. purpose: Purpose of the credit  
-   - Categorical: "radio/tv", "education", "furniture/equipment", "new car", "used car", "business", "domestic appliance", "repairs"
-5. credit_amount: Amount of credit requested  
-   - Numeric, in currency
-6. savings_status: Savings account/bond status  
-   - Categorical: "little", "moderate", "rich", "none"
-7. employment: Employment duration  
-   - Numeric, in years
-8. installment_commitment: Installment commitment as percentage of disposable income  
-   - Numeric
-9. personal_status: Sex and marital status  
-   - Categorical: "male single", "male div/sep", "male mar/wid", "female div/sep", "female mar/wid", "female single"
-10. other_parties: Other debtors/guarantors  
-    - Categorical: "none", "guarantor", "co applicant"
+   1. checking_status: Status of the existing checking account  
+      - Categorical: "no checking", "<0", "0<=X<200", ">=200"
+   2. duration: Duration of the credit  
+      - Numeric, in months
+   3. credit_history: History of credit  
+      - Categorical: "critical/other existing credit", "existing paid", "delayed previously", "no credits/all paid", "all paid", "none"
+   4. purpose: Purpose of the credit  
+      - Categorical: "radio/tv", "education", "furniture/equipment", "new car", "used car", "business", "domestic appliance", "repairs"
+   5. credit_amount: Amount of credit requested  
+      - Numeric, in currency
+   6. savings_status: Savings account/bond status  
+      - Categorical: "little", "moderate", "rich", "none"
+   7. employment: Employment duration  
+      - Numeric, in years
+   8. installment_commitment: Installment commitment as percentage of disposable income  
+      - Numeric
+   9. personal_status: Sex and marital status  
+      - Categorical: "male single", "male div/sep", "male mar/wid", "female div/sep", "female mar/wid", "female single"
+   10. other_parties: Other debtors/guarantors  
+       - Categorical: "none", "guarantor", "co applicant"
 Target variable:
-11. y: Credit risk classification  
-    - Categorical: "good", "bad"
+   11. y: Credit risk classification  
+       - Categorical: "good", "bad"

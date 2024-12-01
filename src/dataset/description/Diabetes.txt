@@ -18,7 +18,7 @@ Instances
 768
 
 Features
-8
+9
 
 Dataset Information
 This dataset originates from the National Institute of Diabetes and Digestive and Kidney Diseases. It focuses on a subset of female patients, at least 21 years old, of Pima Indian heritage, residing near Phoenix, Arizona, USA. The goal of the dataset is to predict whether a patient has diabetes based on various diagnostic measurements.
@@ -48,12 +48,14 @@ Variables Table
 
 
 Additional Variable Information
-pregnancies: Number of times pregnant (integer).
-glucose: Plasma glucose concentration 2 hours after an oral glucose tolerance test (integer, mg/dl).
-bloodPressure: Diastolic blood pressure (integer, mm Hg).
-skinThickness: Triceps skin fold thickness (integer, mm).
-insulin: 2-Hour serum insulin (integer, mu U/ml).
-BMI: Body mass index (integer, kg/m²).
-diabetesPedigreeFunction: Diabetes pedigree function (numeric).
-age: Age (integer, years).
-outcome: 0 or 1 (binary, indicating if the patient has diabetes).
+Input variables:
+	1 - pregnancies: Number of times pregnant (integer).
+	2 - glucose: Plasma glucose concentration 2 hours after an oral glucose tolerance test (integer, mg/dl).
+	3 - bloodPressure: Diastolic blood pressure (integer, mm Hg).
+	4 - skinThickness: Triceps skin fold thickness (integer, mm).
+	5 - insulin: 2-Hour serum insulin (integer, mu U/ml).
+	6 - BMI: Body mass index (integer, kg/m²).
+	7 - diabetesPedigreeFunction: Diabetes pedigree function (numeric).
+	8 - age: Age (integer, years).
+Target variable:
+	9 - outcome: 0 or 1 (binary, indicating if the patient has diabetes).

@@ -1,0 +1,65 @@
+Heart Failure Prediction
+Donated on 2021
+The data is related to predicting heart disease events using clinical features.
+
+Dataset Characteristics
+Multivariate
+
+Subject Area
+Healthcare
+
+Associated Tasks
+Classification
+
+Feature Type
+Categorical, Integer
+
+# Instances
+918
+
+# Features
+12
+
+Dataset Information
+The Heart Failure Prediction Dataset is a compilation of 5 heart disease datasets, each with 12 common features, making it one of the largest heart disease datasets available for research. The dataset can be used to predict the occurrence of heart failure, a common event caused by cardiovascular diseases (CVDs). Early detection and management of heart disease are crucial, and machine learning models can play a significant role in this process. It includes 5 heart datasets combined over 11 common features, making it the largest heart disease dataset available for research purposes. The five datasets used for its curation are:
+Cleveland: 303 observations
+Hungarian: 294 observations
+Switzerland: 123 observations
+Long Beach VA: 200 observations
+Stalog (Heart) Data Set: 270 observations
+The classification goal is to predict if a patient has heart disease (variable HeartDisease).
+
+Has Missing Values?
+No
+
+Variables Table
+| Variable Name       | Role    | Type      | Description                                 | Units |
+|--------------------|---------|-----------|---------------------------------------------|-------|
+| Age                | Feature | Integer   | Age of the patient                           | years |
+| Sex                | Feature | Categorical | Sex of the patient (M: Male, F: Female)       | -     |
+| ChestPainType      | Feature | Categorical | Chest pain type                             | -     |
+| RestingBP          | Feature | Integer   | Resting blood pressure                       | mm Hg|
+| Cholesterol        | Feature | Integer   | Serum cholesterol                            | mm/dl|
+| FastingBS          | Feature | Binary    | Fasting blood sugar (1 if >120 mg/dl, 0 otherwise) | -     |
+| RestingECG         | Feature | Categorical | Resting electrocardiogram results           | -     |
+| MaxHR              | Feature | Integer   | Maximum heart rate achieved                   | -     |
+| ExerciseAngina      | Feature | Binary    | Exercise-induced angina (Y: Yes, N: No)       | -     |
+| Oldpeak            | Feature | Integer   | Oldpeak = ST depression measured             | -     |
+| ST_Slope           | Feature | Categorical | Slope of the peak exercise ST segment        | -     |
+| HeartDisease       | Target  | Binary    | Output class (1: heart disease, 0: Normal)    | -     |
+
+Additional Variable Information
+Input variables:
+	1 - Age (numeric)
+	2 - Sex: sex of the patient (categorical: "M", "F")
+	3 - ChestPainType: chest pain type (categorical: "TA", "ATA", "NAP", "ASY")
+	4 - RestingBP: resting blood pressure (numeric)
+	5 - Cholesterol: serum cholesterol (numeric)
+	6 - FastingBS: fasting blood sugar (binary: "1", "0")
+	7 - RestingECG: resting electrocardiogram results (categorical: "Normal", "ST", "LVH")
+	8 - MaxHR: maximum heart rate achieved (numeric)
+	9 - ExerciseAngina: exercise-induced angina (binary: "Y", "N")
+	10 - Oldpeak: oldpeak = ST (numeric)
+	11 - ST_Slope: the slope of the peak exercise ST segment (categorical: "Up", "Flat", "Down")
+Output variable (desired target):
+	12 - HeartDisease: has the patient heart disease? (binary: "1", "0")
