@@ -1,0 +1,68 @@
+Adult Census Income  
+Donated on 4/30/1996  
+Predict whether the annual income of an individual exceeds $50K/yr based on census data. Also known as "Census Income" dataset.
+
+Dataset Characteristics
+Multivariate
+
+Subject Area
+Social Science
+
+Associated Tasks
+Classification
+
+Feature Type
+Categorical, Integer
+
+# Instances
+48,842
+
+# Features
+14
+
+### Dataset Information
+The data was extracted from the 1994 Census database by Ronny Kohavi and Barry Becker. A set of reasonably clean records was extracted using the following conditions: ((AAGE>16) && (AGI>100) && (AFNLWGT>1) && (HRSWK>0)). The goal is to predict whether a person's income exceeds $50,000 per year. This dataset includes demographic attributes, education, work-related features, and income-related information.
+
+Has Missing Values?
+Yes
+
+Introductory Paper
+Kohavi, R. (1996). "Scaling Up the Accuracy of Naive-Bayes Classifiers: A Decision-Tree Hybrid." Proceedings of the Second International Conference on Knowledge Discovery and Data Mining.
+
+Variables Table
+| Variable Name     | Role    | Type        | Demographic   | Description | Units        | Missing Values |
+|-------------------|---------|-------------|---------------|-------------|--------------|----------------|
+| age               | Feature | Integer     | Age           | Age of individual | N/A          | No             |
+| workclass         | Feature | Categorical | Income        | Workclass type (e.g., Private, Self-emp-not-inc, Federal-gov, etc.) | -            | Yes            |
+| fnlwgt            | Feature | Integer     | -             | Final weight, population sample weight | -            | No             |
+| education         | Feature | Categorical | Education     | Education level (e.g., Bachelors, HS-grad, Masters, etc.) | -            | No             |
+| education-num     | Feature | Integer     | Education     | Education level in numeric form | -            | No             |
+| marital-status    | Feature | Categorical | -             | Marital status (e.g., Married-civ-spouse, Divorced, Never-married, etc.) | -            | No             |
+| occupation        | Feature | Categorical | Occupation    | Occupation type (e.g., Tech-support, Exec-managerial, etc.) | -            | Yes            |
+| relationship      | Feature | Categorical | Family Status | Relationship status (e.g., Wife, Husband, Not-in-family, etc.) | -            | No             |
+| race              | Feature | Categorical | Race          | Race (e.g., White, Black, Asian-Pac-Islander, etc.) | -            | No             |
+| sex               | Feature | Binary      | Sex           | Gender (Female, Male) | -            | No             |
+| capital-gain      | Feature | Integer     | -             | Capital gain from investments | dollars      | No             |
+| capital-loss      | Feature | Integer     | -             | Capital loss from investments | dollars      | No             |
+| hours-per-week    | Feature | Integer     | -             | Hours worked per week | hours        | No             |
+| native-country    | Feature | Categorical | Nationality   | Country of origin (e.g., United-States, Cambodia, etc.) | -            | No             |
+
+Additional Variable Information
+Input variables:
+  1 - age: Continuous.
+  2 - workclass: Private, Self-emp-not-inc, Federal-gov, Local-gov, State-gov, Without-pay, Never-worked.
+  3 - fnlwgt: Continuous.
+  4 - education: Bachelors, Some-college, 11th, HS-grad, Prof-school, Assoc-acdm, Assoc-voc, 9th, 7th-8th, 12th, Masters, 1st-4th, 10th, Doctorate, 5th-6th, Preschool.
+  5 - education-num: Continuous.
+  6 - marital-status: Married-civ-spouse, Divorced, Never-married, Separated, Widowed, Married-spouse-absent, Married-AF-spouse.
+  7 - occupation: Tech-support, Craft-repair, Other-service, Sales, Exec-managerial, Prof-specialty, Handlers-cleaners, Machine-op-inspct, Adm-clerical, Farming-fishing, Transport-moving, Priv-house-serv, Protective-serv, Armed-Forces.
+  8 - relationship: Wife, Own-child, Husband, Not-in-family, Other-relative, Unmarried.
+  9 - race: White, Asian-Pac-Islander, Amer-Indian-Eskimo, Other, Black.
+  10 - sex: Female, Male.
+  11 - capital-gain: Continuous.
+  12 - capital-loss: Continuous.
+  13 - hours-per-week: Continuous.
+  14 - native-country: United-States, Cambodia, England, Puerto-Rico, Canada, Germany, Outlying-US(Guam-USVI-etc), India, Japan, Greece, South, China, Cuba, Iran, Honduras, Philippines, Italy, Poland, Jamaica, Vietnam, Mexico, Portugal, Ireland, France, Dominican-Republic, Laos, Ecuador, Taiwan, Haiti, Columbia, Hungary, Guatemala, Nicaragua, Scotland, Thailand, Yugoslavia, El-Salvador, Trinadad&Tobago, Peru, Hong, Holand-Netherlands.
+
+Output variable:
+  15 - Income: The target variable is binary, indicating whether the income exceeds $50K/year (">50K" vs. "<=50K").

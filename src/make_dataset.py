@@ -38,8 +38,8 @@ if __name__ == "__main__":
     data_names = ['Bank', 'Blood', 'CalHousingC', 'CalHousingR', 'Car', 'CreditG', 'Diabetes', 'Heart', 'Income',
                   'Jungle']
     # data_names = ['CalHousingR']
-    eval_modes = ['0.9-holdout', '3-fold', '10-fold']
-    # eval_modes = ['0.9-holdout']
+    # eval_modes = ['0.9-holdout', '3-fold', '10-fold']
+    eval_modes = ['0.9-holdout']
     cfg['seed'] = 0
     cfg['tag'] = 'make_dataset'
     cfg['make_stats'] = True
