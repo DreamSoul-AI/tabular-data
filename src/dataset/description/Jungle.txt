@@ -1,0 +1,54 @@
+Jungle Chess 2PCS Raw Endgame Complete  
+Donated on 2/20/2018
+The dataset contains positions from the game Dou Shou Qi (Jungle Chess) and is part of a collection focusing on endgame analysis. The classification goal is to predict the outcome of the game based on the positions of two pieces.
+
+Dataset Characteristics  
+Multivariate  
+
+Subject Area  
+Game Theory, AI  
+
+Associated Tasks  
+Classification  
+
+Feature Type  
+Numeric, Nominal  
+
+# Instances  
+44819
+
+# Features  
+7  
+
+### Dataset Information  
+This dataset contains tablebases for various two-piece endgames in Jungle Chess, with positions for pieces like Rat, Panther, Lion, and Elephant. The dataset focuses on predicting the outcome (win/loss/draw) from the configuration of two pieces on the board. The dataset contains several subproblems with similar positions, which can aid in classification tasks related to endgame analysis.
+
+Has Missing Values?  
+No  
+
+Introductory Paper  
+J. N. van Rijn and J. K. Vis, "Endgame Analysis of Dou Shou Qi", ICGA Journal 37:2, 120--124, 2014. [ArXiv link](https://arxiv.org/abs/1604.07312)
+
+Variables Table  
+
+| Variable Name             | Role     | Type     | Demographic   | Description                                          | Units   | Missing Values |
+|---------------------------|----------|----------|---------------|------------------------------------------------------|---------|----------------|
+| white_piece0_strength      | Feature  | Numeric  | -             | Strength of the white piece (5 unique values)         | -       | No             |
+| white_piece0_file          | Feature  | Numeric  | -             | File position of the white piece (7 unique values)    | -       | No             |
+| white_piece0_rank          | Feature  | Numeric  | -             | Rank position of the white piece (9 unique values)    | -       | No             |
+| black_piece0_strength      | Feature  | Numeric  | -             | Strength of the black piece (5 unique values)         | -       | No             |
+| black_piece0_file          | Feature  | Numeric  | -             | File position of the black piece (7 unique values)    | -       | No             |
+| black_piece0_rank          | Feature  | Numeric  | -             | Rank position of the black piece (9 unique values)    | -       | No             |
+| class                      | Target   | Nominal  | -             | Outcome of the game (3 unique values: win, loss, draw)| -       | No             |
+
+Additional Variable Information  
+Input variables:  
+1. white_piece0_strength: Strength of the white piece (numeric)  
+2. white_piece0_file: File position of the white piece (numeric)  
+3. white_piece0_rank: Rank position of the white piece (numeric)  
+4. black_piece0_strength: Strength of the black piece (numeric)  
+5. black_piece0_file: File position of the black piece (numeric)  
+6. black_piece0_rank: Rank position of the black piece (numeric)  
+
+Output variable:  
+7. class: Outcome of the game (nominal: "win", "loss", "draw")

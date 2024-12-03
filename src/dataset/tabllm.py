@@ -310,6 +310,7 @@ class Heart(TabLLM):
 
 
 class Income(TabLLM):
+    # https://archive.ics.uci.edu/dataset/2/adult
     # https://www.kaggle.com/datasets/uciml/adult-census-income
     data_name = 'Income'
     raw_data_name = 'income'

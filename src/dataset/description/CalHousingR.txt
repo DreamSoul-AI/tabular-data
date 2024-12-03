@@ -9,7 +9,7 @@ Subject Area
 Social Science, Real Estate
 
 Associated Tasks
-Regression, Classification
+Regression
 
 Feature Type
 Continuous, Integer
