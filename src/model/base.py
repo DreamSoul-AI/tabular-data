@@ -26,6 +26,7 @@ class Base(nn.Module):
         output['pred'] = x
         output['loss'] = make_loss(output, input, mode=self.task_mode)
         self.normalize_output(input, output)
+        # https://huggingface.co/dunzhang/stella_en_400M_v5
         return output
 
     def normalize_input(self, input):

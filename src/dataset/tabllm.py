@@ -334,7 +334,7 @@ class Income(TabLLM):
         strip_string_columns(dataset_test)
         dataset_test['label'] = dataset_test['label'] == '>50K.'
         dataset = pd.concat([dataset_train, dataset_test], axis=0)
-        dataset = dataset.drop(columns=['fnlwgt', 'education_num'])
+        dataset = dataset.drop(columns=['fnlwgt', 'education_num']) # drop based on TabLLM
         dataset['label'] = dataset['label'].astype(int)
         for col in dataset.select_dtypes(include=['object']).columns:
             le = LabelEncoder()
