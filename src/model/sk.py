@@ -43,7 +43,7 @@ class SK:
             elif model_name == 'ann':
                 self.core = MLPClassifier(hidden_layer_sizes=kwargs['hidden_size'], solver=kwargs['solver'])
             elif model_name == 'svm':
-                self.core = SVC()
+                self.core = SVC(probability=True)
             elif model_name == 'rf':
                 self.core = RandomForestClassifier()
             elif model_name == 'gb':
@@ -59,16 +59,24 @@ class SK:
         output = {}
         x = self.normalize_input(input)
         self.core.fit(x.numpy(), input['target'].numpy())
-        output['pred'] = input['target'].new_tensor(self.core.predict(x.numpy()))
-        output['loss'] = make_loss(output, input, mode=self.task_mode)
+        if self.task_mode == 'regression':
+            pred = torch.tensor(self.core.predict(x.numpy()), device=input['data'].device)
+        else:
+            pred = torch.tensor(self.core.predict_proba(x.numpy()), device=input['data'].device).log()
+        output['pred'] = pred
+        output['loss'] = make_loss(output, input, mode=self.task_mode, log_prob=True)
         self.normalize_output(input, output)
         return output
 
     def predict(self, input):
         output = {}
         x = self.normalize_input(input)
-        output['pred'] = torch.tensor(self.core.predict(x.numpy()), device=input['data'].device)
-        output['loss'] = make_loss(output, input, mode=self.task_mode)
+        if self.task_mode == 'regression':
+            pred = torch.tensor(self.core.predict(x.numpy()), device=input['data'].device)
+        else:
+            pred = torch.tensor(self.core.predict_proba(x.numpy()), device=input['data'].device).log()
+        output['pred'] = pred
+        output['loss'] = make_loss(output, input, mode=self.task_mode, log_prob=True)
         self.normalize_output(input, output)
         return output
 

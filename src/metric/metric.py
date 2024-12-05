@@ -152,34 +152,18 @@ class ResidualKurtosis(BaseMetric):
 class AUC(BaseMetric):
     def __init__(self, average='macro'):
         super().__init__()
-        self.average = average  # 'macro' for macro-average AUC, can be adjusted as needed
+        self.average = average
 
     def __call__(self, pred, target):
         with torch.no_grad():
-            # Ensure that target is a one-hot encoded tensor for multiclass AUC
-            if target.ndimension() == 1:  # For binary classification or single-class multiclass labels
-                target_one_hot = torch.zeros((target.size(0), 2), device=target.device)  # For binary classification
-                target_one_hot.scatter_(1, target.view(-1, 1), 1)
-            else:  # For multiclass classification, target is already one-hot
-                target_one_hot = target
-
-            # In case of multi-class, AUC requires the output probabilities (not logits)
-            if pred.ndimension() == 2 and pred.size(1) > 1:  # Multiclass case
-                # Softmax for probabilities (if pred is logits)
-                pred = torch.softmax(pred, dim=1)
-            elif pred.ndimension() == 1:  # Binary case, pred is a single output per sample (logits)
-                pred = torch.sigmoid(pred).view(-1, 1)  # Apply sigmoid for probabilities (if pred is logits)
-
-            # Convert to numpy for compatibility with sklearn
-            pred_np = pred.cpu().numpy()
-            target_one_hot_np = target_one_hot.cpu().numpy()
-
-            # Compute AUC (binary or multi-class)
-            if target_one_hot_np.shape[1] == 2:  # Binary classification (2 classes)
-                auc = roc_auc_score(target_one_hot_np[:, 1],
-                                    pred_np[:, 0])  # Use the positive class probabilities for binary
+            if_binary = len(target.unique()) == 2
+            pred = pred.exp() # convert log prob to prob
+            pred = pred.cpu().numpy()
+            target = target.cpu().numpy()
+            if if_binary:  # Binary classification (2 classes)
+                auc = roc_auc_score(target, pred[:, 1])
             else:  # Multiclass AUC (one-vs-rest)
-                auc = roc_auc_score(target_one_hot_np, pred_np, average=self.average, multi_class='ovr')
+                auc = roc_auc_score(target, pred, average=self.average, multi_class='ovr')
         return auc
 
 
@@ -210,7 +194,7 @@ class Metric:
                     mode_keys[split][metric_name_i]['input'].add('target')
                     mode_keys[split][metric_name_i]['output'].add('pred')
                 elif metric_name_i in ['RMSE', 'R2', 'Correlation', 'ResidualMean', 'ResidualStd', 'ResidualSkewness',
-                                       'ResidualKurtosis']:
+                                       'ResidualKurtosis', 'AUC']:
                     mode[split][metric_name_i] = 'full'
                     mode_keys[split][metric_name_i]['input'].add('target')
                     mode_keys[split][metric_name_i]['output'].add('pred')

@@ -11,7 +11,7 @@ def process_control():
     cfg['step_period'] = 1
     cfg['num_steps'] = 60
     cfg['eval_period'] = 30
-    # cfg['num_epochs'] = 200
+    cfg['num_epochs'] = 30
     cfg['collate_mode'] = 'dict'
 
     cfg['model'] = {}
@@ -43,6 +43,6 @@ def process_control():
     cfg[tag]['optimizer']['batch_size'] = {'train': cfg['batch_size'], 'test': cfg['batch_size']}
     cfg[tag]['optimizer']['step_period'] = cfg['step_period']
     cfg[tag]['optimizer']['num_steps'] = cfg['num_steps']
-    cfg[tag]['optimizer']['scheduler_name'] = 'None'
+    cfg[tag]['optimizer']['scheduler_name'] = 'CosineAnnealingLR'
     cfg[tag]['optimizer']['warmup_ratio'] = 0
     return
