@@ -103,6 +103,10 @@ def make_data_loader(dataset, batch_size, num_steps=None, step=0, step_period=1,
 
 def process_dataset(dataset):
     processed_dataset = dataset
+    if cfg['num_shots'] != -1:
+        split_index = torch.randperm(len(dataset['train']))[:cfg['num_shots']]
+        dataset['train'] = split_dataset(dataset['train'], split_index)
+
     cfg['sample_size'] = {k: len(processed_dataset[k]) for k in processed_dataset}
     cfg['model']['data_size'] = processed_dataset['train'].data_size
     cfg['model']['target_size'] = processed_dataset['train'].target_size

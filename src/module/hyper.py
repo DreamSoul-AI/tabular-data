@@ -6,6 +6,7 @@ def process_control():
     cfg['data_name'] = cfg['control']['data_name']
     cfg['model_name'] = cfg['control']['model_name']
     cfg['eval_mode'] = cfg['control']['eval_mode']
+    cfg['num_shots'] = cfg['control']['num_shots']
 
     cfg['batch_size'] = 256
     cfg['step_period'] = 1
@@ -17,12 +18,6 @@ def process_control():
     cfg['model'] = {}
     model_name_list = cfg['model_name'].split('-')
     cfg['model']['model_name'] = model_name_list[0]
-    # data_shape = {'Bank': [16], 'Blood': [4], 'CalHousingC': [4], 'CalHousingR': [4],
-    #               'Car': [6], 'CreditG': [20], 'Diabetes': [8], 'Heart': [11], 'Income': [12], 'Jungle': [6]}
-    # target_size = {'Bank': 2, 'Blood': 2, 'CalHousingC': 2, 'CalHousingR': 1, 'Car': 4,
-    #                'CreditG': 2, 'Diabetes': 2, 'Heart': 2, 'Income': 2, 'Jungle': 2}
-    # cfg['model']['data_shape'] = data_shape[cfg['data_name']]
-    # cfg['model']['target_size'] = target_size[cfg['data_name']]
     cfg['model']['linear'] = {}
     cfg['model']['mlp'] = {'hidden_size': 128, 'scale_factor': 0.5, 'num_layers': 2, 'activation': 'relu'}
     cfg['model']['kan'] = {'hidden_size': [128, 64]}
