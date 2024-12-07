@@ -27,11 +27,14 @@ class TabLLM(Dataset):
                 self.description = file.read()
         else:
             self.description = None
+        self.feature_names = None
+        self.target_names = None
 
     def __getitem__(self, index):
         id, data, target = torch.tensor(self.id[index]), torch.tensor(self.data[index]), torch.tensor(
             self.target[index])
-        input = {'id': id, 'data': data, 'target': target}
+        input = {'id': id, 'data': data, 'target': target, 'description': self.description,
+                 'feature_names': self.feature_names, 'target_names': self.target_names}
         return input
 
     def __len__(self):
@@ -334,7 +337,7 @@ class Income(TabLLM):
         strip_string_columns(dataset_test)
         dataset_test['label'] = dataset_test['label'] == '>50K.'
         dataset = pd.concat([dataset_train, dataset_test], axis=0)
-        dataset = dataset.drop(columns=['fnlwgt', 'education_num']) # drop based on TabLLM
+        dataset = dataset.drop(columns=['fnlwgt', 'education_num'])  # drop based on TabLLM
         dataset['label'] = dataset['label'].astype(int)
         for col in dataset.select_dtypes(include=['object']).columns:
             le = LabelEncoder()

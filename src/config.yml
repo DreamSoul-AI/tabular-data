@@ -3,7 +3,7 @@
 control:
   data_name: Bank
   eval_mode: 0.9-holdout
-  model_name: gb
+  model_name: linear
   num_shots: -1
 # experiment
 pin_memory: True

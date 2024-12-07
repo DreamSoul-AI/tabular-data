@@ -53,11 +53,13 @@ def input_collate(input):
     first = input[0]
     batch = {}
     for k, v in first.items():
-        if v is not None and not isinstance(v, str):
+        if v is not None:
             if isinstance(v, torch.Tensor):
                 batch[k] = torch.stack([f[k] for f in input])
             elif isinstance(v, np.ndarray):
                 batch[k] = torch.tensor(np.stack([f[k] for f in input]))
+            elif isinstance(v, str):
+                batch[k] = [f[k] for f in input]
             else:
                 batch[k] = torch.tensor([f[k] for f in input])
     return batch
