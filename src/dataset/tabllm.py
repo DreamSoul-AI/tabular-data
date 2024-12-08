@@ -16,8 +16,8 @@ class TabLLM(Dataset):
         self.root = os.path.expanduser(root)
         self.split = split
         self.transform = transform
-        if not check_exists(self.processed_folder):
-            self.process()
+        # if not check_exists(self.processed_folder):
+        self.process()
         self.id, self.data, self.target = load(os.path.join(self.processed_folder, 'data'))
         self.meta = load(os.path.join(self.processed_folder, 'meta'))
         self.data_size = self.meta['data_size']
@@ -51,9 +51,12 @@ class TabLLM(Dataset):
     def process(self):
         if not check_exists(self.raw_folder):
             self.download()
-        data_set, meta = self.make_data()
-        save(data_set, os.path.join(self.processed_folder, 'data'))
-        save(meta, os.path.join(self.processed_folder, 'meta'))
+        data_set, meta = self.make_numeric_data()
+        save(data_set, os.path.join(self.processed_folder, 'numeric', 'data'))
+        save(meta, os.path.join(self.processed_folder, 'numeric', 'meta'))
+        data_set, meta = self.make_semantic_data()
+        save(data_set, os.path.join(self.processed_folder, 'semantic', 'data'))
+        save(meta, os.path.join(self.processed_folder, 'semantic', 'meta'))
         return
 
     def download(self):
@@ -63,7 +66,10 @@ class TabLLM(Dataset):
     def __repr__(self):
         return f'Dataset {self.__class__.__name__}\nSize: {self.__len__()}\nRoot: {self.root}\nSplit: {self.split}'
 
-    def make_data(self):
+    def make_numeric_data(self):
+        raise NotImplementedError
+
+    def make_semantic_data(self):
         raise NotImplementedError
 
 
@@ -77,14 +83,14 @@ class Bank(TabLLM):
                      'month', 'duration', 'campaign', 'pdays', 'previous', 'poutcome']
     target_names = ['deposit']
 
-    def make_data(self):
+    def make_numeric_data(self):
         columns = {'V' + str(i + 1): v for i, v in enumerate(self.feature_names)}
         dataset = pd.DataFrame(arff.loadarff(os.path.join(self.raw_folder, 'phpkIxskf.arff'))[0])
         dataset = byte_to_string_columns(dataset)
         dataset.rename(columns=columns, inplace=True)
-        dataset.rename(columns={'Class': 'label'}, inplace=True)
-        dataset['label'] = dataset['label'] == '2'
-        dataset['label'] = dataset['label'].astype(int)
+        dataset.rename(columns={'Class': 'deposit'}, inplace=True)
+        dataset['deposit'] = dataset['deposit'] == '2'
+        dataset['deposit'] = dataset['deposit'].astype(int)
         for col in dataset.select_dtypes(include=['object']).columns:
             le = LabelEncoder()
             dataset[col] = le.fit_transform(dataset[col])
@@ -100,6 +106,27 @@ class Bank(TabLLM):
         data_size = list(X.shape[1:])
         target_size = len(classes)
         meta = {'data_size': data_size, 'target_size': target_size, 'classes_to_labels': classes_to_labels}
+        return data_set, meta
+
+    def make_semantic_data(self):
+        columns = {'V' + str(i + 1): v for i, v in enumerate(self.feature_names)}
+        dataset = pd.DataFrame(arff.loadarff(os.path.join(self.raw_folder, 'phpkIxskf.arff'))[0])
+        dataset = byte_to_string_columns(dataset)
+        dataset.rename(columns=columns, inplace=True)
+        dataset.rename(columns={'Class': 'deposit'}, inplace=True)
+        dataset['deposit'] = dataset['deposit'] == '2'
+        dataset['deposit'] = dataset['deposit'].astype(str)
+        dataset = dataset.apply(convert_to_semantic, axis=1)
+        data = dataset.to_numpy()
+        id = np.arange(len(data)).astype(np.int64)
+        data_set = (id, data)
+        classes = ['False', 'True']
+        classes_to_labels = {classes[i]: i for i in range(len(classes))}
+        data_size = len(data[0])
+        target_size = len(classes)
+        target_pos = -1
+        meta = {'data_size': data_size, 'target_size': target_size, 'classes_to_labels': classes_to_labels,
+                'target_dim': target_pos}
         return data_set, meta
 
 
@@ -391,3 +418,7 @@ def byte_to_string_columns(data):
         if dtype == object:  # Only process byte object columns.
             data[col] = data[col].apply(lambda x: x.decode('utf-8'))
     return data
+
+
+def convert_to_semantic(row):
+    return [(col, value) for col, value in row.items()]
