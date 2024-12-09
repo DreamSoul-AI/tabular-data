@@ -32,12 +32,15 @@ def copy_dataset_description():
                     print(f"Target directory '{target_dir}' does not exist. Skipping {file_name}.")
     return
 
+
 if __name__ == "__main__":
     stats_path = os.path.join('output', 'stats')
     dim = 1
     # data_names = ['Bank', 'Blood', 'CalHousingC', 'CalHousingR', 'Car', 'CreditG', 'Diabetes', 'Heart', 'Income',
     #               'Jungle']
     data_names = ['Bank']
+    data_modes = ['numeric', 'semantic']
+    # data_modes = ['semantic']
     # eval_modes = ['0.9-holdout', '3-fold', '10-fold']
     eval_modes = ['0.9-holdout']
     cfg['seed'] = 0
@@ -45,31 +48,38 @@ if __name__ == "__main__":
     cfg['make_stats'] = True
     with torch.no_grad():
         for data_name in data_names:
-            for eval_mode in eval_modes:
-                cfg['control']['data_name'] = '-'.join([data_name])
-                cfg['control']['eval_mode'] = eval_mode
-                process_control()
-                dataset = make_dataset(cfg['data_name'], cfg['eval_mode'])
-                stats = []
-                for i in range(len(dataset)):
-                    dataset_i = process_dataset(dataset[i])
-                    cfg['step'] = 0
-                    data_loader = make_data_loader(dataset_i, cfg[cfg['tag']]['optimizer']['batch_size'],
-                                                   shuffle=False)
-                    stats_i = {'data': Stats(dim=dim)}
-                    if cfg['model']['task_mode'] == 'regression':
-                        stats_i['target'] = Stats(dim=1)
-                    for i, input in enumerate(data_loader['train']):
-                        stats_i['data'].update(input['data'])
-                        if cfg['model']['task_mode'] == 'regression':
-                            stats_i['target'].update(input['target'])
-                    stats.append(stats_i)
-                    if cfg['model']['task_mode'] == 'regression':
-                        print('Name: {}\nData:\n{}\nTarget:\n{}'.format(cfg['control']['data_name'],
-                                                                        stats_i['data'], stats_i['target']))
-                    else:
-                        print('Name: {}\nData:\n{}'.format(cfg['control']['data_name'],
-                                                           stats_i['data']))
-                makedir_exist_ok(stats_path)
-                save(stats, os.path.join(stats_path, '{}_{}'.format(data_name, eval_mode)), 'torch')
+            for data_mode in data_modes:
+                for eval_mode in eval_modes:
+                    cfg['control']['data_name'] = '-'.join([data_name])
+                    cfg['control']['data_mode'] = data_mode
+                    cfg['control']['eval_mode'] = eval_mode
+                    process_control()
+                    dataset = make_dataset(cfg['data_name'], cfg['data_mode'], cfg['eval_mode'])
+                    stats = []
+                    for i in range(len(dataset)):
+                        dataset_i = process_dataset(dataset[i])
+                        cfg['step'] = 0
+                        data_loader = make_data_loader(dataset_i, cfg[cfg['tag']]['optimizer']['batch_size'],
+                                                       shuffle=False)
+                        if data_mode == 'numeric':
+                            stats_i = {'data': Stats(dim=dim)}
+                            if cfg['model']['task_mode'] == 'regression':
+                                stats_i['target'] = Stats(dim=1)
+                            for i, input in enumerate(data_loader['train']):
+                                stats_i['data'].update(input['data'])
+                                if cfg['model']['task_mode'] == 'regression':
+                                    stats_i['target'].update(input['target'])
+                            stats.append(stats_i)
+                            if cfg['model']['task_mode'] == 'regression':
+                                print('Name: {}({})\nData:\n{}\nTarget:\n{}'.format(cfg['control']['data_name'],
+                                                                                    cfg['control']['data_mode'],
+                                                                                    stats_i['data'], stats_i['target']))
+                            else:
+                                print('Name: {}({})\nData:\n{}'.format(cfg['control']['data_name'],
+                                                                       cfg['control']['data_mode'],
+                                                                       stats_i['data']))
+                        else:
+                            print('Name: {} ({})'.format(cfg['control']['data_name'], cfg['control']['data_mode']))
+                    makedir_exist_ok(stats_path)
+                    save(stats, os.path.join(stats_path, '{}_{}'.format(data_name, eval_mode)), 'torch')
     copy_dataset_description()

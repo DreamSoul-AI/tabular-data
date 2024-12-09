@@ -9,13 +9,13 @@ from torch.utils.data.dataloader import default_collate
 from config import cfg
 
 
-def make_dataset(data_name, eval_mode=None, verbose=True):
+def make_dataset(data_name, data_mode, eval_mode=None, verbose=True):
     if verbose:
-        print('fetching data {}...'.format(data_name))
+        print('fetching data {}({})...'.format(data_name, data_mode))
     if data_name in ['Bank', 'Blood', 'CalHousingC', 'CalHousingR', 'Car', 'CreditG', 'Diabetes', 'Heart', 'Income',
                      'Jungle']:
         root = os.path.join('data', 'TabLLM')
-        raw_dataset = eval('dataset.{}(root=root)'.format(data_name))
+        raw_dataset = eval('dataset.{}(root=root, data_mode=data_mode)'.format(data_name, data_mode))
     else:
         raise ValueError('Not valid dataset name')
     eval_mode = '0.9-holdout' if eval_mode is None else eval_mode
@@ -59,6 +59,8 @@ def input_collate(input):
             elif isinstance(v, np.ndarray):
                 batch[k] = torch.tensor(np.stack([f[k] for f in input]))
             elif isinstance(v, str):
+                batch[k] = [f[k] for f in input]
+            elif isinstance(v, list):
                 batch[k] = [f[k] for f in input]
             else:
                 batch[k] = torch.tensor([f[k] for f in input])

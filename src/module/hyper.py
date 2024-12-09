@@ -4,6 +4,7 @@ from .stats import make_stats
 
 def process_control():
     cfg['data_name'] = cfg['control']['data_name']
+    cfg['data_mode'] = cfg['control']['data_mode']
     cfg['model_name'] = cfg['control']['model_name']
     cfg['eval_mode'] = cfg['control']['eval_mode']
     cfg['num_shots'] = cfg['control']['num_shots']

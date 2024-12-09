@@ -12,14 +12,14 @@ class TabLLM(Dataset):
     data_name = 'TabLLM'
     raw_data_name = 'tabllm'
 
-    def __init__(self, root, split='train', transform=None):
+    def __init__(self, root, data_mode, transform=None):
         self.root = os.path.expanduser(root)
-        self.split = split
+        self.data_mode = data_mode
         self.transform = transform
-        # if not check_exists(self.processed_folder):
-        self.process()
-        self.id, self.data, self.target = load(os.path.join(self.processed_folder, 'data'))
-        self.meta = load(os.path.join(self.processed_folder, 'meta'))
+        if not check_exists(self.processed_folder):
+            self.process()
+        self.id, self.data, self.target = load(os.path.join(self.processed_folder, self.data_mode, 'data'))
+        self.meta = load(os.path.join(self.processed_folder, self.data_mode, 'meta'))
         self.data_size = self.meta['data_size']
         self.target_size = self.meta['target_size']
         if os.path.exists(os.path.join(self.raw_folder, '{}.txt'.format(self.data_name))):
@@ -31,8 +31,10 @@ class TabLLM(Dataset):
         self.target_names = None
 
     def __getitem__(self, index):
-        id, data, target = torch.tensor(self.id[index]), torch.tensor(self.data[index]), torch.tensor(
-            self.target[index])
+        id, data, target = torch.tensor(self.id[index]), self.data[index], self.target[index]
+        if self.data_mode == 'numeric':
+            data = torch.tensor(data)
+            target = torch.tensor(target)
         input = {'id': id, 'data': data, 'target': target, 'description': self.description,
                  'feature_names': self.feature_names, 'target_names': self.target_names}
         return input
@@ -116,17 +118,18 @@ class Bank(TabLLM):
         dataset.rename(columns={'Class': 'deposit'}, inplace=True)
         dataset['deposit'] = dataset['deposit'] == '2'
         dataset['deposit'] = dataset['deposit'].astype(str)
-        dataset = dataset.apply(convert_to_semantic, axis=1)
-        data = dataset.to_numpy()
+        data, target = dataset.iloc[:, :-1], dataset.iloc[:, [-1]]
+        data = data.apply(convert_to_semantic, axis=1)
+        data = data.to_numpy()
+        target = target.apply(convert_to_semantic, axis=1)
+        target = target.to_numpy()
         id = np.arange(len(data)).astype(np.int64)
-        data_set = (id, data)
+        data_set = (id, data, target)
         classes = ['False', 'True']
         classes_to_labels = {classes[i]: i for i in range(len(classes))}
         data_size = len(data[0])
         target_size = len(classes)
-        target_pos = -1
-        meta = {'data_size': data_size, 'target_size': target_size, 'classes_to_labels': classes_to_labels,
-                'target_dim': target_pos}
+        meta = {'data_size': data_size, 'target_size': target_size, 'classes_to_labels': classes_to_labels}
         return data_set, meta
 
 
