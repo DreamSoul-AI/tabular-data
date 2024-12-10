@@ -49,12 +49,13 @@ def runExperiment():
         logger = make_logger(cfg['logger_path'], data_name=cfg['data_name'], run_mode=cfg['run_mode'])
         logger.load_state_dict(result['logger'])
         logger.reset()
-    dataset = make_dataset(cfg['data_name'], cfg['eval_mode'])
+    dataset = make_dataset(cfg['data_name'], cfg['data_mode'], cfg['eval_mode'])
     model = []
     optimizer = []
     scheduler = []
     for i in range(len(dataset)):
         dataset_i = process_dataset(dataset[i])
+        exit()
         model_i = make_model(cfg['model'], i)
         if result is None:
             cfg['step'] = 0

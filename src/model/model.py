@@ -6,14 +6,18 @@ import model
 from transformers import get_linear_schedule_with_warmup
 
 
-def make_model(model_cfg, index):
-    if model_cfg['model_name'] in ['linear', 'mlp', 'kan']:
-        core = eval('model.{}(model_cfg)'.format(model_cfg['model_name']))
-        base = model.base(core, model_cfg, index)
-    elif model_cfg['model_name'] in ['ridge', 'ann', 'svm', 'rf', 'gb', 'gp', 'dt']:
-        base = model.sk(model_cfg, index)
+def make_model(cfg, index):
+    if cfg['model_name'] in ['linear', 'mlp', 'kan']:
+        core = eval('model.{}(model_cfg)'.format(cfg['model_name']))
+        base = model.base(core, cfg, index)
+    elif cfg['model_name'] in ['ridge', 'ann', 'svm', 'rf', 'gb', 'gp', 'dt']:
+        base = model.sk(cfg, index)
+    elif cfg['model_name'] in ['bert']:
+        core, tokenizer = eval('model.{}(cfg)'.format(cfg['model_name']))
+        base = model.base(core, cfg, index)
+        base.tokenizer = tokenizer
     else:
-        raise ValueError('Unknown model: {}'.format(model_cfg['model_name']))
+        raise ValueError('Unknown model: {}'.format(cfg['model_name']))
     return base
 
 

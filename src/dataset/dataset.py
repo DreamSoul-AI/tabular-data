@@ -105,7 +105,7 @@ def make_data_loader(dataset, batch_size, num_steps=None, step=0, step_period=1,
     return data_loader
 
 
-def process_dataset(dataset):
+def process_dataset(dataset, tokenizer=None):
     processed_dataset = dataset
     if cfg['num_shots'] != -1:
         split_index = torch.randperm(len(dataset['train']))[:cfg['num_shots']]
@@ -127,6 +127,28 @@ def process_dataset(dataset):
         cfg['model']['task_mode'] = 'classification'
     else:
         raise ValueError('Not valid dataset name')
+
+    if cfg['data_mode'] == 'semantic':
+        def tokenize_transform(tokenizer, max_length):
+            def transform(example):
+                tokenized = tokenizer(
+                    example,
+                    return_tensors="pt",
+                    padding="max_length",
+                    max_length=max_length,
+                    truncation=False,
+                )
+                tokenized['input_ids'] = tokenized['input_ids'].squeeze(0)
+                tokenized['attention_mask'] = tokenized['attention_mask'].squeeze(0)
+                del tokenized['token_type_ids']
+                return tokenized
+
+            return transform
+
+        if tokenizer is not None:
+            for k in processed_dataset:
+                processed_dataset[k].transform = tokenize_transform(tokenizer, cfg['model']['max_length'])
+
     return processed_dataset
 
 
