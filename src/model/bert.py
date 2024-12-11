@@ -2,26 +2,23 @@ import os
 from transformers import AutoTokenizer
 from transformers.models.bert.configuration_bert import BertConfig
 from transformers import AutoModel, AutoModelForSequenceClassification, AutoConfig
+from sentence_transformers import SentenceTransformer
 
 
 def bert(cfg):
+    bert_model_name = 'intfloat/multilingual-e5-large-instruct'
     cache_dir = os.path.join('output', 'cache')
-    cache_tokenizer_path = os.path.join(cache_dir, cfg['model_name'], 'tokenizer')
-    cache_config_path = os.path.join(cache_dir, cfg['model_name'], 'config')
-    cache_model_path = os.path.join(cache_dir, cfg['model_name'], 'model')
-    if not os.path.exists(os.path.join(cache_dir, cfg['model_name'])):
+    cache_tokenizer_path = os.path.join(cache_dir, bert_model_name, 'tokenizer')
+    cache_config_path = os.path.join(cache_dir, bert_model_name, 'config')
+    cache_model_path = os.path.join(cache_dir, bert_model_name, 'model')
+    if not os.path.exists(os.path.join(cache_dir, bert_model_name)):
         local_files_only = False
     else:
         local_files_only = True
-    # Load the tokenizer
-    tokenizer = AutoTokenizer.from_pretrained("x", trust_remote_code=True,
-                                              cache_dir=cache_tokenizer_path, local_files_only=local_files_only,
-                                              use_fast=True, padding_side=cfg['padding_side'])
-
-    # Load the configuration and model
-    config = BertConfig.from_pretrained("x", cache_dir=cache_config_path,
-                                        local_files_only=local_files_only)
-
-    model = AutoModel.from_pretrained("x", trust_remote_code=True, config=config,
-                                      cache_dir=cache_model_path, local_files_only=local_files_only)
+    tokenizer = AutoTokenizer.from_pretrained(bert_model_name, trust_remote_code=True,
+                                              cache_dir=cache_tokenizer_path, local_files_only=local_files_only)
+    config = AutoConfig.from_pretrained(bert_model_name, trust_remote_code=True,
+                                        cache_dir=cache_config_path, local_files_only=False)
+    model = AutoModel.from_pretrained(bert_model_name, trust_remote_code=True,
+                                      cache_dir=cache_model_path, config=config, local_files_only=local_files_only)
     return model, tokenizer

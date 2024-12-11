@@ -54,9 +54,9 @@ def runExperiment():
     optimizer = []
     scheduler = []
     for i in range(len(dataset)):
-        dataset_i = process_dataset(dataset[i])
-        exit()
         model_i = make_model(cfg['model'], i)
+        exit()
+        dataset_i = process_dataset(dataset[i], model_i.tokenizer)
         if result is None:
             cfg['step'] = 0
             model_i = model_i.to(cfg['device'])
