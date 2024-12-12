@@ -10,14 +10,20 @@ class Base(nn.Module):
         self.core = core
         self.index = index
         self.cfg = cfg
+        self.data_mode = cfg['data_mode']
         self.model_name = cfg['model_name']
         self.task_mode = cfg['task_mode']
-        self.stats = cfg['stats']
-        self.register_buffer('data_mean', self.stats[index]['data'].mean)
-        self.register_buffer('data_std', self.stats[index]['data'].std)
-        if self.task_mode == 'regression':
-            self.register_buffer('target_mean', self.stats[index]['target'].mean)
-            self.register_buffer('target_std', self.stats[index]['target'].mean)
+        if self.data_mode == 'numeric':
+            self.stats = cfg['stats']
+            self.register_buffer('data_mean', self.stats[index]['data'].mean)
+            self.register_buffer('data_std', self.stats[index]['data'].std)
+            if self.task_mode == 'regression':
+                self.register_buffer('target_mean', self.stats[index]['target'].mean)
+                self.register_buffer('target_std', self.stats[index]['target'].mean)
+        elif self.data_mode == 'semantic':
+            pass
+        else:
+            raise NotImplementedError
 
     def forward(self, input):
         output = {}
@@ -28,7 +34,6 @@ class Base(nn.Module):
         output['pred'] = x
         output['loss'] = make_loss(output, input, mode=self.task_mode, log_prob=True)
         self.normalize_output(input, output)
-        # https://huggingface.co/dunzhang/stella_en_400M_v5
         return output
 
     def normalize_input(self, input):

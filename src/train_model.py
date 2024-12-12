@@ -55,7 +55,6 @@ def runExperiment():
     scheduler = []
     for i in range(len(dataset)):
         model_i = make_model(cfg['model'], i)
-        exit()
         dataset_i = process_dataset(dataset[i], model_i.tokenizer)
         if result is None:
             cfg['step'] = 0
@@ -110,7 +109,7 @@ def train(data_loader, model, optimizer, scheduler, logger, index, verbose=False
         for i, input in enumerate(data_loader):
             if i % cfg['step_period'] == 0 and cfg['profile']:
                 logger.profiler.step()
-            input_size = input['data'].size(0)
+            input_size = len(input[list(input.keys())[0]])
             input = to_device(input, cfg['device'])
             output = model(input)
             loss = 1 / cfg['step_period'] * output['loss']
@@ -149,7 +148,7 @@ def test(data_loader, model, logger, index, mode=None, verbose=False):
     with torch.no_grad():
         model.train(False)
         for i, input in enumerate(data_loader):
-            input_size = input['data'].size(0)
+            input_size = len(input[list(input.keys())[0]])
             input = to_device(input, cfg['device'])
             output = model(input)
             if mode is None or mode == 'batch':

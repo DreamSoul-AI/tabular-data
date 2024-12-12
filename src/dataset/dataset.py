@@ -120,34 +120,30 @@ def process_dataset(dataset, tokenizer=None):
         cfg[cfg['tag']]['optimizer']['num_steps'] = cfg['num_steps']
     if cfg['model_name'] in ['ridge', 'ann', 'svm', 'rf', 'gb', 'gp', 'dt']:
         cfg['num_steps'] = None
-    if cfg['data_name'] in ['CalHousingR']:
-        cfg['model']['task_mode'] = 'regression'
-    elif cfg['data_name'] in ['Bank', 'Blood', 'CalHousingC', 'Car', 'CreditG', 'Diabetes',
-                              'Heart', 'Income', 'Jungle']:
-        cfg['model']['task_mode'] = 'classification'
-    else:
-        raise ValueError('Not valid dataset name')
 
     if cfg['data_mode'] == 'semantic':
-        def tokenize_transform(tokenizer, max_length):
+        def tokenize_transform(tokenizer):
             def transform(example):
-                tokenized = tokenizer(
-                    example,
-                    return_tensors="pt",
-                    padding="max_length",
-                    max_length=max_length,
-                    truncation=False,
-                )
-                tokenized['input_ids'] = tokenized['input_ids'].squeeze(0)
-                tokenized['attention_mask'] = tokenized['attention_mask'].squeeze(0)
-                del tokenized['token_type_ids']
+                print(example)
+                exit()
+                # tokenized = tokenizer(
+                #     example,
+                #     return_tensors="pt",
+                #     padding="max_length",
+                #     max_length=max_length,
+                #     truncation=False,
+                # )
+                # tokenized['input_ids'] = tokenized['input_ids'].squeeze(0)
+                # tokenized['attention_mask'] = tokenized['attention_mask'].squeeze(0)
+                # del tokenized['token_type_ids']
+                tokenized = None
                 return tokenized
 
             return transform
 
         if tokenizer is not None:
             for k in processed_dataset:
-                processed_dataset[k].transform = tokenize_transform(tokenizer, cfg['model']['max_length'])
+                processed_dataset[k].transform = tokenize_transform(tokenizer)
 
     return processed_dataset
 

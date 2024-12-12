@@ -26,6 +26,14 @@ def process_control():
     cfg['model']['ann'] = {'hidden_size': (128, 64), 'solver': 'adam'}
     if 'make_stats' not in cfg:
         cfg['model']['stats'] = make_stats('{}_{}'.format(cfg['control']['data_name'], cfg['eval_mode']))
+    cfg['model']['data_mode'] = cfg['data_mode']
+    if cfg['data_name'] in ['CalHousingR']:
+        cfg['model']['task_mode'] = 'regression'
+    elif cfg['data_name'] in ['Bank', 'Blood', 'CalHousingC', 'Car', 'CreditG', 'Diabetes',
+                              'Heart', 'Income', 'Jungle']:
+        cfg['model']['task_mode'] = 'classification'
+    else:
+        raise ValueError('Not valid dataset name')
 
     tag = cfg['tag']
     cfg[tag] = {}

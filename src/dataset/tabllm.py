@@ -37,6 +37,8 @@ class TabLLM(Dataset):
             target = torch.tensor(target)
         input = {'id': id, 'data': data, 'target': target, 'description': self.description,
                  'feature_names': self.feature_names, 'target_names': self.target_names}
+        if self.transform is not None:
+            input = self.transform(input)
         return input
 
     def __len__(self):
