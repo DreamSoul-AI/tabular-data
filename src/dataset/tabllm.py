@@ -22,13 +22,11 @@ class TabLLM(Dataset):
         self.meta = load(os.path.join(self.processed_folder, self.data_mode, 'meta'))
         self.data_size = self.meta['data_size']
         self.target_size = self.meta['target_size']
-        if os.path.exists(os.path.join(self.raw_folder, '{}.txt'.format(self.data_name))):
-            with open(os.path.join(self.raw_folder, '{}.txt'.format(self.data_name)), 'r') as file:
+        if os.path.exists(os.path.join(self.processed_folder, '{}.txt'.format(self.data_name))):
+            with open(os.path.join(self.processed_folder, '{}.txt'.format(self.data_name)), 'r') as file:
                 self.description = file.read()
         else:
             self.description = None
-        self.feature_names = None
-        self.target_names = None
 
     def __getitem__(self, index):
         id, data, target = torch.tensor(self.id[index]), self.data[index], self.target[index]
@@ -119,7 +117,7 @@ class Bank(TabLLM):
         dataset.rename(columns=columns, inplace=True)
         dataset.rename(columns={'Class': 'deposit'}, inplace=True)
         dataset['deposit'] = dataset['deposit'] == '2'
-        dataset['deposit'] = dataset['deposit'].astype(str)
+        dataset = dataset.astype(str)
         data, target = dataset.iloc[:, :-1], dataset.iloc[:, [-1]]
         data = data.apply(convert_to_semantic, axis=1)
         data = data.to_numpy()

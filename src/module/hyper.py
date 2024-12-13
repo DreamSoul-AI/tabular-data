@@ -34,6 +34,7 @@ def process_control():
         cfg['model']['task_mode'] = 'classification'
     else:
         raise ValueError('Not valid dataset name')
+    cfg['model']['max_length'] = 8
 
     tag = cfg['tag']
     cfg[tag] = {}

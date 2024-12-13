@@ -122,28 +122,38 @@ def process_dataset(dataset, tokenizer=None):
         cfg['num_steps'] = None
 
     if cfg['data_mode'] == 'semantic':
-        def tokenize_transform(tokenizer):
+        def tokenize_transform(tokenizer, max_length):
             def transform(example):
-                print(example)
-                exit()
-                # tokenized = tokenizer(
-                #     example,
-                #     return_tensors="pt",
-                #     padding="max_length",
-                #     max_length=max_length,
-                #     truncation=False,
-                # )
+                data = [element for tup in example['data'] for element in tup]
+                target = [element for tup in example['target'] for element in tup]
+                # print(data)
+                # print(tokenizer)
+                data = tokenizer(
+                    data,
+                    return_tensors="pt",
+                    padding='max_length',
+                    max_length=max_length,
+                    truncation=True,
+                )
+                target = tokenizer(
+                    target,
+                    return_tensors="pt",
+                    padding='max_length',
+                    max_length=max_length,
+                    truncation=True,
+                )
                 # tokenized['input_ids'] = tokenized['input_ids'].squeeze(0)
                 # tokenized['attention_mask'] = tokenized['attention_mask'].squeeze(0)
                 # del tokenized['token_type_ids']
-                tokenized = None
-                return tokenized
+                # tokenized = None
+                output = {''} # TODO: make output by gathering target
+                return output
 
             return transform
 
         if tokenizer is not None:
             for k in processed_dataset:
-                processed_dataset[k].transform = tokenize_transform(tokenizer)
+                processed_dataset[k].transform = tokenize_transform(tokenizer, cfg['model']['max_length'])
 
     return processed_dataset
 
