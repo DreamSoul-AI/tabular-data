@@ -35,6 +35,7 @@ def process_control():
     else:
         raise ValueError('Not valid dataset name')
     cfg['model']['max_length'] = 8
+    cfg['model']['mask_mode'] = 'target'
 
     tag = cfg['tag']
     cfg[tag] = {}

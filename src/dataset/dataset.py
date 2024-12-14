@@ -122,38 +122,50 @@ def process_dataset(dataset, tokenizer=None):
         cfg['num_steps'] = None
 
     if cfg['data_mode'] == 'semantic':
+        cfg['model']['target_size'] = tokenizer.vocab_size
+
+        class Compose(object):
+            def __init__(self, transforms):
+                self.transforms = transforms
+
+            def __call__(self, input):
+                for t in self.transforms:
+                    input = t(input)
+                return input
+
         def tokenize_transform(tokenizer, max_length):
             def transform(example):
-                data = [element for tup in example['data'] for element in tup]
-                target = [element for tup in example['target'] for element in tup]
-                # print(data)
-                # print(tokenizer)
-                data = tokenizer(
+                data = example['data'] + example['target']
+                data = [element for tup in data for element in tup]
+                output = tokenizer(
                     data,
                     return_tensors="pt",
                     padding='max_length',
                     max_length=max_length,
                     truncation=True,
                 )
-                target = tokenizer(
-                    target,
-                    return_tensors="pt",
-                    padding='max_length',
-                    max_length=max_length,
-                    truncation=True,
-                )
-                # tokenized['input_ids'] = tokenized['input_ids'].squeeze(0)
-                # tokenized['attention_mask'] = tokenized['attention_mask'].squeeze(0)
-                # del tokenized['token_type_ids']
-                # tokenized = None
-                output = {''} # TODO: make output by gathering target
+                # perform pad when multiple datasets using data_size
                 return output
 
             return transform
 
+        # def mask_transform(tokenizer): TODO: move to model
+        #     def transform(data):
+        #         if cfg['model']['mask_mode'] == 'target':
+        #             data['input_ids'][-1][:] = tokenizer.mask_token_id
+        #             data['attention_mask'][-1][:] = 1
+        #         else:
+        #             raise ValueError('Not valid mask mode')
+        #         print(data)
+        #         exit()
+        #         return data
+
+            # return transform
+
         if tokenizer is not None:
             for k in processed_dataset:
-                processed_dataset[k].transform = tokenize_transform(tokenizer, cfg['model']['max_length'])
+                processed_dataset[k].transform = Compose(
+                    [tokenize_transform(tokenizer, cfg['model']['max_length'])])
 
     return processed_dataset
 
