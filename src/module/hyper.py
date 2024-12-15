@@ -9,7 +9,12 @@ def process_control():
     cfg['eval_mode'] = cfg['control']['eval_mode']
     cfg['num_shots'] = cfg['control']['num_shots']
 
-    cfg['batch_size'] = 256
+    if cfg['data_mode'] == 'numeric':
+        cfg['batch_size'] = 256
+    elif cfg['data_mode'] == 'semantic':
+        cfg['batch_size'] = 8
+    else:
+        raise ValueError('Not valid data mode')
     cfg['step_period'] = 1
     cfg['num_steps'] = 60
     cfg['eval_period'] = 30

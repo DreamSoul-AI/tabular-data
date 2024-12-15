@@ -13,17 +13,12 @@ class Base(nn.Module):
         self.data_mode = cfg['data_mode']
         self.model_name = cfg['model_name']
         self.task_mode = cfg['task_mode']
-        if self.data_mode == 'numeric':
-            self.stats = cfg['stats']
-            self.register_buffer('data_mean', self.stats[index]['data'].mean)
-            self.register_buffer('data_std', self.stats[index]['data'].std)
-            if self.task_mode == 'regression':
-                self.register_buffer('target_mean', self.stats[index]['target'].mean)
-                self.register_buffer('target_std', self.stats[index]['target'].mean)
-        elif self.data_mode == 'semantic':
-            pass
-        else:
-            raise NotImplementedError
+        self.stats = cfg['stats']
+        self.register_buffer('data_mean', self.stats[index]['data'].mean)
+        self.register_buffer('data_std', self.stats[index]['data'].std)
+        if self.task_mode == 'regression':
+            self.register_buffer('target_mean', self.stats[index]['target'].mean)
+            self.register_buffer('target_std', self.stats[index]['target'].mean)
 
     def forward(self, input):
         output = {}

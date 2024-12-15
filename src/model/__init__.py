@@ -6,3 +6,4 @@ from .base import *
 from .sk import *
 from .kan import *
 from .bert import *
+from .semantic import *

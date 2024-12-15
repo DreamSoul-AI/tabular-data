@@ -149,19 +149,6 @@ def process_dataset(dataset, tokenizer=None):
 
             return transform
 
-        # def mask_transform(tokenizer): TODO: move to model
-        #     def transform(data):
-        #         if cfg['model']['mask_mode'] == 'target':
-        #             data['input_ids'][-1][:] = tokenizer.mask_token_id
-        #             data['attention_mask'][-1][:] = 1
-        #         else:
-        #             raise ValueError('Not valid mask mode')
-        #         print(data)
-        #         exit()
-        #         return data
-
-            # return transform
-
         if tokenizer is not None:
             for k in processed_dataset:
                 processed_dataset[k].transform = Compose(

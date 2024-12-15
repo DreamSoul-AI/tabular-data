@@ -14,7 +14,7 @@ def make_model(cfg, index):
         base = model.sk(cfg, index)
     elif cfg['model_name'] in ['bert']:
         core, tokenizer = eval('model.{}(cfg)'.format(cfg['model_name']))
-        base = model.base(core, cfg, index)
+        base = model.semantic(core, tokenizer, cfg, index)
         base.tokenizer = tokenizer
     else:
         raise ValueError('Unknown model: {}'.format(cfg['model_name']))
