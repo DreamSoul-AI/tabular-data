@@ -39,8 +39,8 @@ if __name__ == "__main__":
     # data_names = ['Bank', 'Blood', 'CalHousingC', 'CalHousingR', 'Car', 'CreditG', 'Diabetes', 'Heart', 'Income',
     #               'Jungle']
     data_names = ['Bank']
-    # data_modes = ['numeric', 'semantic']
-    data_modes = ['semantic']
+    data_modes = ['numeric', 'semantic']
+    # data_modes = ['semantic']
     # eval_modes = ['0.9-holdout', '3-fold', '10-fold']
     eval_modes = ['0.9-holdout']
     cfg['seed'] = 0

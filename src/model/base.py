@@ -5,7 +5,7 @@ from .loss import make_loss
 
 
 class Base(nn.Module):
-    def __init__(self, core, index, cfg):
+    def __init__(self, core, cfg, index):
         super().__init__()
         self.core = core
         self.index = index
@@ -24,10 +24,10 @@ class Base(nn.Module):
         output = {}
         x = self.normalize_input(input)
         x = self.core(x)
-        if self.task_mode == 'classification':
-            x = torch.log_softmax(x, dim=-1)
+        # if self.task_mode == 'classification':
+        #     x = torch.log_softmax(x, dim=-1)
         output['pred'] = x
-        output['loss'] = make_loss(output, input, mode=self.task_mode, log_prob=True)
+        output['loss'] = make_loss(output, input, mode=self.task_mode, log_prob=False)
         self.normalize_output(input, output)
         return output
 
@@ -48,5 +48,5 @@ class Base(nn.Module):
 
 
 def base(core, cfg, index):
-    model = Base(core, index, cfg)
+    model = Base(core, cfg, index)
     return model

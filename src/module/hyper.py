@@ -18,7 +18,8 @@ def process_control():
     cfg['step_period'] = 1
     cfg['num_steps'] = 60
     cfg['eval_period'] = 30
-    cfg['num_epochs'] = 30
+    # cfg['eval_steps'] = 30
+    # cfg['num_epochs'] = 30
     cfg['collate_mode'] = 'dict'
 
     cfg['model'] = {}
@@ -39,6 +40,7 @@ def process_control():
         cfg['model']['task_mode'] = 'classification'
     else:
         raise ValueError('Not valid dataset name')
+    cfg['model']['bert'] = {'hidden_size': 1024}
     cfg['model']['max_length'] = 8
     cfg['model']['mask_mode'] = 'target'
 

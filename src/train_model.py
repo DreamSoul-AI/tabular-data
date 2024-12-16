@@ -54,8 +54,9 @@ def runExperiment():
     optimizer = []
     scheduler = []
     for i in range(len(dataset)):
+        dataset_i = process_dataset(dataset[i])
         model_i = make_model(cfg['model'], i)
-        dataset_i = process_dataset(dataset[i], model_i.tokenizer)
+        # dataset_i = process_dataset(dataset[i], model_i.tokenizer) # TODO: need process tokenizer separately
         if result is None:
             cfg['step'] = 0
             model_i = model_i.to(cfg['device'])
@@ -145,6 +146,7 @@ def train(data_loader, model, optimizer, scheduler, logger, index, verbose=False
 
 
 def test(data_loader, model, logger, index, mode=None, verbose=False):
+    # TODO: add eval_steps
     with torch.no_grad():
         model.train(False)
         for i, input in enumerate(data_loader):

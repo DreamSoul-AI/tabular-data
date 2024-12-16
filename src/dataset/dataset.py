@@ -122,7 +122,7 @@ def process_dataset(dataset, tokenizer=None):
         cfg['num_steps'] = None
 
     if cfg['data_mode'] == 'semantic':
-        cfg['model']['target_size'] = tokenizer.vocab_size
+        cfg['model']['target_size'] = tokenizer.vocab_size # TODO: need to process separately
 
         class Compose(object):
             def __init__(self, transforms):
