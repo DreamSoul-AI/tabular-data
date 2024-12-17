@@ -29,9 +29,6 @@ class Semantic(nn.Module):
         pred = self.make_pred(x.last_hidden_state)
         output['pred'] = pred
         input['target'] = target
-        # print(pred.size())
-        # print(input['target'].size())
-        # exit()
         output['loss'] = make_loss(output, input, mode=self.task_mode, log_prob=False)
         return output
 
@@ -49,11 +46,8 @@ class Semantic(nn.Module):
 
     def make_pred(self, hidden_state):
         if self.cfg['mask_mode'] == 'target':
-            # print(hidden_state.size())
             hidden_state = hidden_state.view(hidden_state.size(0), -1, self.cfg['max_length'], hidden_state.size(-1))
             hidden_state = hidden_state[:, -1]
-            # print(hidden_state.size())
-        # exit()
         pred = self.out_proj(hidden_state).transpose(1, 2)
         return pred
 

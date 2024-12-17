@@ -2,9 +2,9 @@
 # control
 control:
   data_name: Bank
-  data_mode: numeric
+  data_mode: semantic
   eval_mode: 0.9-holdout
-  model_name: linear
+  model_name: bert
   num_shots: -1
 # experiment
 pin_memory: True

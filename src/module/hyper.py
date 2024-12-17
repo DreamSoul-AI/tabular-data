@@ -12,13 +12,14 @@ def process_control():
     if cfg['data_mode'] == 'numeric':
         cfg['batch_size'] = 256
     elif cfg['data_mode'] == 'semantic':
-        cfg['batch_size'] = 8
+        cfg['batch_size'] = 1
     else:
         raise ValueError('Not valid data mode')
     cfg['step_period'] = 1
-    cfg['num_steps'] = 60
+    cfg['num_steps'] = 30
     cfg['eval_period'] = 30
-    # cfg['eval_steps'] = 30
+    cfg['eval'] = {}
+    cfg['eval']['num_steps'] = 30
     # cfg['num_epochs'] = 30
     cfg['collate_mode'] = 'dict'
 

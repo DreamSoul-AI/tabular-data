@@ -54,9 +54,8 @@ def runExperiment():
     optimizer = []
     scheduler = []
     for i in range(len(dataset)):
-        dataset_i = process_dataset(dataset[i])
         model_i = make_model(cfg['model'], i)
-        # dataset_i = process_dataset(dataset[i], model_i.tokenizer) # TODO: need process tokenizer separately
+        dataset_i = process_dataset(dataset[i], model_i.tokenizer)
         if result is None:
             cfg['step'] = 0
             model_i = model_i.to(cfg['device'])
@@ -146,9 +145,9 @@ def train(data_loader, model, optimizer, scheduler, logger, index, verbose=False
 
 
 def test(data_loader, model, logger, index, mode=None, verbose=False):
-    # TODO: add eval_steps
     with torch.no_grad():
         model.train(False)
+        num_steps = len(data_loader) if cfg['eval']['num_steps'] == -1 else cfg['eval']['num_steps']
         for i, input in enumerate(data_loader):
             input_size = len(input[list(input.keys())[0]])
             input = to_device(input, cfg['device'])
@@ -158,6 +157,8 @@ def test(data_loader, model, logger, index, mode=None, verbose=False):
                 logger.append(evaluation, 'test', input_size)
             if mode is None or mode == 'full':
                 logger.add('test', input, output)
+            if (i + 1) == num_steps:
+                break
         info = {'info': ['Model: {} ({})'.format(cfg['tag'], index),
                          'Test Epoch: {}({:.0f}%)'.format(cfg['step'] // cfg['eval_period'], 100.)]}
         logger.append(info, 'test')
