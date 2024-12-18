@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from .model import normalize
 from .loss import make_loss
-
+from module import filter_args
 
 class Semantic(nn.Module):
     def __init__(self, core, tokenizer, index, cfg):
@@ -25,11 +25,14 @@ class Semantic(nn.Module):
         output = {}
         input, target = self.make_target(input)
         input = self.flatten(input)
-        x = self.core(**input)
-        pred = self.make_pred(x.last_hidden_state)
-        output['pred'] = pred
+        valid_input = filter_args(self.core.forward, input)
+        x = self.core(**valid_input)
+        output['pred'], output['pred_semantic'] = self.make_pred(x.last_hidden_state)
         input['target'] = target
         output['loss'] = make_loss(output, input, mode=self.task_mode, log_prob=False)
+        print(input['target_semantic'])
+        print(output['pred_semantic'])
+        exit()
         return output
 
     def make_target(self, input):
@@ -49,7 +52,9 @@ class Semantic(nn.Module):
             hidden_state = hidden_state.view(hidden_state.size(0), -1, self.cfg['max_length'], hidden_state.size(-1))
             hidden_state = hidden_state[:, -1]
         pred = self.out_proj(hidden_state).transpose(1, 2)
-        return pred
+        pred_tokens = torch.argmax(pred, dim=1)
+        pred_semantic = self.tokenizer.batch_decode(pred_tokens, skip_special_tokens=True)
+        return pred, pred_semantic
 
 
 def semantic(core, tokenizer, cfg, index):

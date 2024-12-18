@@ -12,7 +12,7 @@ def process_control():
     if cfg['data_mode'] == 'numeric':
         cfg['batch_size'] = 256
     elif cfg['data_mode'] == 'semantic':
-        cfg['batch_size'] = 1
+        cfg['batch_size'] = 2
     else:
         raise ValueError('Not valid data mode')
     cfg['step_period'] = 1

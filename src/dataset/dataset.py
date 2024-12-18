@@ -135,15 +135,16 @@ def process_dataset(dataset, tokenizer=None):
             def transform(example):
                 data = example['data'] + example['target']
                 data = [element for tup in data for element in tup]
-                output = tokenizer(
+                data = tokenizer(
                     data,
                     return_tensors="pt",
                     padding='max_length',
                     max_length=max_length,
                     truncation=True,
                 )
+                data['target_semantic'] = example['target'][0][1]
                 # perform pad when multiple datasets using data_size
-                return output
+                return data
 
             return transform
 

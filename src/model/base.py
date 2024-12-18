@@ -24,8 +24,6 @@ class Base(nn.Module):
         output = {}
         x = self.normalize_input(input)
         x = self.core(x)
-        # if self.task_mode == 'classification':
-        #     x = torch.log_softmax(x, dim=-1)
         output['pred'] = x
         output['loss'] = make_loss(output, input, mode=self.task_mode, log_prob=False)
         self.normalize_output(input, output)
