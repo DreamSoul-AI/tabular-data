@@ -6,14 +6,13 @@ from module import filter_args
 
 
 class Semantic(nn.Module):
-    def __init__(self, core, tokenizer, index, cfg):
+    def __init__(self, core, tokenizer, cfg, index):
         super().__init__()
         self.core = core
         self.freeze(self.core)
         self.tokenizer = tokenizer
         self.index = index
         self.cfg = cfg
-        self.data_mode = cfg['data_mode']
         self.task_mode = 'classification'
         # TODO: use bert default out proj
         self.out_proj = nn.Linear(cfg[cfg['model_name']]['hidden_size'], tokenizer.vocab_size)
@@ -29,18 +28,16 @@ class Semantic(nn.Module):
         input = self.flatten(input)
         valid_input = filter_args(self.core.forward, input)
         x = self.core(**valid_input)
-        output['pred'], output['pred_semantic'] = self.make_pred(x.last_hidden_state)
+        output['pred'], output['pred_semantic'], output['pred_numeric'] = self.make_pred(x.last_hidden_state)
         input['target'] = target
         output['loss'] = make_loss(output, input, mode=self.task_mode, log_prob=False)
-        input['target'] = input['target_semantic']
-        output['pred'] = output['pred_semantic']
-        print(output['pred'])
+        input['target'] = input['target_numeric']
+        output['pred'] = output['pred_numeric']
         return output
 
     def make_target(self, input):
         if self.cfg['mask_mode'] == 'target':
             target = input['input_ids'][:, -1].clone().detach()
-            print(target)
             input['input_ids'][:, -1][:] = self.tokenizer.mask_token_id
             input['attention_mask'][:, -1][:] = 1
         return input, target
@@ -58,14 +55,14 @@ class Semantic(nn.Module):
         pred = pred.transpose(1, 2)
         # print(pred.size())
         pred_tokens = torch.argmax(pred, dim=1)
-        print(pred_tokens)
+        # print(pred_tokens)
         # print(pred_tokens.size())
         pred_semantic = self.tokenizer.batch_decode(pred_tokens, skip_special_tokens=True)
-        print(pred_semantic)
-        # exit()
-        return pred, pred_semantic
+        pred_numeric = [self.classes_to_labels.get(pred_semantic[i], -1) for i in range(len(pred_semantic))]
+        pred_numeric = hidden_state.new_tensor(pred_numeric, dtype=torch.long)
+        return pred, pred_semantic, pred_numeric
 
 
 def semantic(core, tokenizer, cfg, index):
-    model = Semantic(core, tokenizer, index, cfg)
+    model = Semantic(core, tokenizer, cfg, index)
     return model

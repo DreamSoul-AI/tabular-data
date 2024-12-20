@@ -105,7 +105,7 @@ def make_data_loader(dataset, batch_size, num_steps=None, step=0, step_period=1,
     return data_loader
 
 
-def process_dataset(dataset, tokenizer=None):
+def process_dataset(dataset, model=None, tokenizer=None):
     processed_dataset = dataset
     if cfg['num_shots'] != -1:
         split_index = torch.randperm(len(dataset['train']))[:cfg['num_shots']]
@@ -143,11 +143,19 @@ def process_dataset(dataset, tokenizer=None):
                     truncation=True,
                 )
                 data['target_semantic'] = example['target'][0][1]
-                # perform pad when multiple datasets using data_size
+                if 'classes_to_labels' in dataset['train'].meta:
+                    data['target_numeric'] = torch.tensor(dataset['train'].meta['classes_to_labels'] \
+                                                              [data['target_semantic']], dtype=torch.long)
+                else:
+                    data['target_numeric'] = torch.tensor(float(data['target_semantic']), dtype=torch.float32)
+                    # perform pad when multiple datasets using data_size
                 return data
 
             return transform
 
+        if 'classes_to_labels' in dataset['train'].meta:
+            cfg['model']['classes_to_labels'] = dataset['train'].meta['classes_to_labels']
+            model.classes_to_labels = dataset['train'].meta['classes_to_labels']
         if tokenizer is not None:
             for k in processed_dataset:
                 processed_dataset[k].transform = Compose(

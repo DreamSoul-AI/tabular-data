@@ -47,21 +47,15 @@ class Accuracy(BaseMetric):
 
     def __call__(self, pred, target):
         with torch.no_grad():
-            if isinstance(target, list):
-                correct = 0
-                for i in range(len(target)):
-                    correct += int(target[i] == list[i])
-                acc = correct / len(target)
+            if target.dtype != torch.int64:
+                target = (target.topk(1, 1, True, True)[1]).view(-1)
+            batch_size = torch.numel(target)
+            if pred.dtype != torch.int64:
+                pred_k = pred.topk(self.topk, 1, True, True)[1]
+                correct_k = pred_k.eq(target.unsqueeze(1).expand_as(pred_k)).float().sum()
             else:
-                if target.dtype != torch.int64:
-                    target = (target.topk(1, 1, True, True)[1]).view(-1)
-                batch_size = torch.numel(target)
-                if pred.dtype != torch.int64:
-                    pred_k = pred.topk(self.topk, 1, True, True)[1]
-                    correct_k = pred_k.eq(target.unsqueeze(1).expand_as(pred_k)).float().sum()
-                else:
-                    correct_k = pred.eq(target).float().sum()
-                acc = (correct_k * (100.0 / batch_size)).item()
+                correct_k = pred.eq(target).float().sum()
+            acc = (correct_k * (100.0 / batch_size)).item()
         return acc
 
 
