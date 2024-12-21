@@ -14,8 +14,15 @@ class Semantic(nn.Module):
         self.index = index
         self.cfg = cfg
         self.task_mode = 'classification'
-        # TODO: use bert default out proj
-        self.out_proj = nn.Linear(cfg[cfg['model_name']]['hidden_size'], tokenizer.vocab_size)
+        self.hidden_size = cfg[cfg['model_name']]['hidden_size']
+        # self.adapter = nn.Linear(self.hidden_size, self.hidden_size)
+        # self.out_proj = nn.Linear(self.hidden_size, tokenizer.vocab_size, bias=False)
+        # for param_name, param in self.core.named_parameters():
+        #     if 'word_embeddings' in param_name:
+        #         self.out_proj.weight = param
+        #         self.out_proj.weight.requires_grad = False
+        #         break
+        self.out_proj = nn.Linear(self.hidden_size, tokenizer.vocab_size)
 
     def freeze(self, model):
         for param in model.parameters():
@@ -28,7 +35,9 @@ class Semantic(nn.Module):
         input = self.flatten(input)
         valid_input = filter_args(self.core.forward, input)
         x = self.core(**valid_input)
-        output['pred'], output['pred_semantic'], output['pred_numeric'] = self.make_pred(x.last_hidden_state)
+        x = x.last_hidden_state
+        # x = self.adapter(x)
+        output['pred'], output['pred_semantic'], output['pred_numeric'] = self.make_pred(x)
         input['target'] = target
         output['loss'] = make_loss(output, input, mode=self.task_mode, log_prob=False)
         input['target'] = input['target_numeric']
@@ -51,15 +60,19 @@ class Semantic(nn.Module):
         if self.cfg['mask_mode'] == 'target':
             hidden_state = hidden_state.view(hidden_state.size(0), -1, self.cfg['max_length'], hidden_state.size(-1))
             hidden_state = hidden_state[:, -1]
+            hidden_state = torch.cumsum(hidden_state, dim=1) # pos embedding
+            # print(hidden_state.size())
+            # exit()
         pred = self.out_proj(hidden_state)
         pred = pred.transpose(1, 2)
         # print(pred.size())
         pred_tokens = torch.argmax(pred, dim=1)
-        # print(pred_tokens)
+        print(pred_tokens)
         # print(pred_tokens.size())
         pred_semantic = self.tokenizer.batch_decode(pred_tokens, skip_special_tokens=True)
         pred_numeric = [self.classes_to_labels.get(pred_semantic[i], -1) for i in range(len(pred_semantic))]
         pred_numeric = hidden_state.new_tensor(pred_numeric, dtype=torch.long)
+        print(pred_semantic)
         return pred, pred_semantic, pred_numeric
 
 
