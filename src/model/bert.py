@@ -18,7 +18,7 @@ def bert(cfg):
     tokenizer = AutoTokenizer.from_pretrained(bert_model_name, trust_remote_code=True,
                                               cache_dir=cache_tokenizer_path, local_files_only=local_files_only)
     config = AutoConfig.from_pretrained(bert_model_name, trust_remote_code=True,
-                                        cache_dir=cache_config_path, local_files_only=False)
+                                        cache_dir=cache_config_path, local_files_only=local_files_only)
     model = AutoModel.from_pretrained(bert_model_name, trust_remote_code=True,
                                       cache_dir=cache_model_path, config=config, local_files_only=local_files_only)
     cfg['target_size'] = tokenizer.vocab_size
