@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from .model import normalize
 from .loss import make_loss
 from module import filter_args
@@ -56,15 +57,16 @@ class Semantic(nn.Module):
         self.cfg = cfg
         self.task_mode = 'classification'
         self.hidden_size = cfg[cfg['model_name']]['hidden_size']
-        # self.adapter = nn.Linear(self.hidden_size, self.hidden_size)
-        # self.out_proj = nn.Linear(self.hidden_size, tokenizer.vocab_size, bias=False)
-        # for param_name, param in self.core.named_parameters():
-        #     if 'word_embeddings' in param_name:
-        #         self.out_proj.weight = param
-        #         self.out_proj.weight.requires_grad = False
-        #         break
+        self.adapter = nn.Linear(self.hidden_size, self.hidden_size)
+        self.out_proj = nn.Linear(self.hidden_size, tokenizer.vocab_size, bias=False)
+        for param_name, param in self.core.named_parameters():
+            if 'word_embeddings' in param_name:
+                self.out_proj.weight = param
+                self.out_proj.weight.requires_grad = False
+                break
+        self.target_size = tokenizer.vocab_size
         self.pos_embedding = RopePositionEmbedding(self.hidden_size, max_len=cfg['max_length'])
-        self.out_proj = nn.Linear(self.hidden_size, tokenizer.vocab_size)
+        # self.out_proj = nn.Linear(self.hidden_size, self.target_size)
 
     def freeze(self, model):
         for param in model.parameters():
@@ -73,17 +75,19 @@ class Semantic(nn.Module):
 
     def forward(self, input):
         output = {}
-        input, target = self.make_target(input)
+        input, target, target_weight = self.make_target(input)
         input, sequence_length = self.flatten(input)
         valid_input = filter_args(self.core.forward, input)
-        x = self.core(**valid_input)
-        x = x.last_hidden_state
-        # x = self.adapter(x)
+        with torch.no_grad():
+            x = self.core(**valid_input)
+        x = x.last_hidden_state.detach()
+        x = self.adapter(x)
         output['pred'], output['pred_semantic'], output['pred_numeric'] = self.make_pred(x, sequence_length)
         input['target'] = target
         # print(input['target'])
         # exit()
-        output['loss'] = make_loss(output, input, mode=self.task_mode, log_prob=False)
+        # output['loss'] = make_loss(output, input, mode=self.task_mode, log_prob=False)
+        output['loss'] = F.cross_entropy(output['pred'], input['target'], reduction='mean', weight=target_weight)
         input['target'] = input['target_numeric']
         output['pred'] = output['pred_numeric']
         return output
@@ -91,11 +95,17 @@ class Semantic(nn.Module):
     def make_target(self, input):
         if self.cfg['mask_mode'] == 'target':
             target = input['input_ids'][:, -1].clone().detach()
+            target_weight = target.new_zeros((self.target_size,), dtype=torch.float)
+            unique_target, unique_counts = torch.unique(target, return_counts=True)
+            unique_freq = 1 / unique_counts
+            target_weight[unique_target] = unique_freq / unique_freq.sum()
+            # print(target_weight[unique_target])
+            # exit()
             input['input_ids'][:, -1][:] = self.tokenizer.mask_token_id
             input['attention_mask'][:, -1][:] = 1
         else:
             raise ValueError('Not valid mask mode')
-        return input, target
+        return input, target, target_weight
 
     def flatten(self, input):
         sequence_length = input['input_ids'].size(1)
@@ -108,7 +118,7 @@ class Semantic(nn.Module):
             hidden_state = hidden_state.view(-1, sequence_length, self.cfg['max_length'], hidden_state.size(-1))
             # hidden_state = hidden_state[:, -1]
             hidden_state = hidden_state.mean(dim=1)
-            # hidden_state = self.pos_embedding(hidden_state)
+            hidden_state = self.pos_embedding(hidden_state)
             # hidden_state = torch.cumsum(hidden_state, dim=1)  # pos embedding
         pred = self.out_proj(hidden_state)
         pred = pred.transpose(1, 2)
