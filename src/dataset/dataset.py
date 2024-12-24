@@ -142,6 +142,8 @@ def process_dataset(dataset, model=None, tokenizer=None):
                     max_length=max_length,
                     truncation=True,
                 )
+                if 'token_type_ids' in data:
+                    del data['token_type_ids']
                 data['target_semantic'] = example['target'][0][1]
                 if 'classes_to_labels' in dataset['train'].meta:
                     data['target_numeric'] = torch.tensor(dataset['train'].meta['classes_to_labels'] \
@@ -154,8 +156,12 @@ def process_dataset(dataset, model=None, tokenizer=None):
             return transform
 
         if 'classes_to_labels' in dataset['train'].meta:
-            cfg['model']['classes_to_labels'] = dataset['train'].meta['classes_to_labels']
-            model.classes_to_labels = dataset['train'].meta['classes_to_labels']
+            classes_to_labels = copy.deepcopy(dataset['train'].meta['classes_to_labels'])
+            for key in dataset['train'].meta['classes_to_labels']:
+                if key.lower() not in classes_to_labels:
+                    classes_to_labels[key.lower()] = dataset['train'].meta['classes_to_labels'][key]
+            cfg['model']['classes_to_labels'] = classes_to_labels
+            model.classes_to_labels = classes_to_labels
         if tokenizer is not None:
             for k in processed_dataset:
                 processed_dataset[k].transform = Compose(

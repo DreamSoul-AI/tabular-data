@@ -41,7 +41,7 @@ def process_control():
         cfg['model']['task_mode'] = 'classification'
     else:
         raise ValueError('Not valid dataset name')
-    cfg['model']['bert'] = {'hidden_size': 1024}
+    # cfg['model']['bert'] = {'hidden_size': 1024}
     cfg['model']['max_length'] = 8
     cfg['model']['mask_mode'] = 'target'
 
