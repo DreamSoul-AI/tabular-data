@@ -9,13 +9,13 @@ from torch.utils.data.dataloader import default_collate
 from config import cfg
 
 
-def make_dataset(data_name, data_mode, eval_mode=None, verbose=True):
+def make_dataset(data_name, data_mode, eval_mode=None, process=False, verbose=True):
     if verbose:
         print('fetching data {}({})...'.format(data_name, data_mode))
     if data_name in ['Bank', 'Blood', 'CalHousingC', 'CalHousingR', 'Car', 'CreditG', 'Diabetes', 'Heart', 'Income',
                      'Jungle']:
         root = os.path.join('data', 'TabLLM')
-        raw_dataset = eval('dataset.{}(root=root, data_mode=data_mode)'.format(data_name, data_mode))
+        raw_dataset = eval('dataset.{}(root=root, data_mode=data_mode, process=process)'.format(data_name, data_mode))
     else:
         raise ValueError('Not valid dataset name')
     eval_mode = '0.9-holdout' if eval_mode is None else eval_mode
@@ -161,7 +161,8 @@ def process_dataset(dataset, model=None, tokenizer=None):
                 if key.lower() not in classes_to_labels:
                     classes_to_labels[key.lower()] = dataset['train'].meta['classes_to_labels'][key]
             cfg['model']['classes_to_labels'] = classes_to_labels
-            model.classes_to_labels = classes_to_labels
+            if model is not None:
+                model.classes_to_labels = classes_to_labels
         if tokenizer is not None:
             for k in processed_dataset:
                 processed_dataset[k].transform = Compose(

@@ -46,6 +46,7 @@ if __name__ == "__main__":
     cfg['seed'] = 0
     cfg['tag'] = 'make_dataset'
     cfg['make_stats'] = True
+    process = False
     with torch.no_grad():
         for data_name in data_names:
             for data_mode in data_modes:
@@ -54,7 +55,7 @@ if __name__ == "__main__":
                     cfg['control']['data_mode'] = data_mode
                     cfg['control']['eval_mode'] = eval_mode
                     process_control()
-                    dataset = make_dataset(cfg['data_name'], cfg['data_mode'], cfg['eval_mode'])
+                    dataset = make_dataset(cfg['data_name'], cfg['data_mode'], cfg['eval_mode'], process=process)
                     stats = []
                     for i in range(len(dataset)):
                         dataset_i = process_dataset(dataset[i])

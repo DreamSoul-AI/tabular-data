@@ -6,9 +6,9 @@ from sentence_transformers import SentenceTransformer
 
 
 def bert(cfg):
-    # bert_model_name = 'intfloat/multilingual-e5-large-instruct'
+    bert_model_name = 'intfloat/multilingual-e5-large-instruct'
     # bert_model_name = 'dunzhang/stella_en_400M_v5'
-    bert_model_name = 'Alibaba-NLP/gte-base-en-v1.5'
+    # bert_model_name = 'Alibaba-NLP/gte-base-en-v1.5'
     cache_dir = os.path.join('output', 'cache')
     cache_tokenizer_path = os.path.join(cache_dir, bert_model_name, 'tokenizer')
     cache_config_path = os.path.join(cache_dir, bert_model_name, 'config')

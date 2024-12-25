@@ -11,12 +11,13 @@ from module import check_exists, makedir_exist_ok, save, load
 class TabLLM(Dataset):
     data_name = 'TabLLM'
     raw_data_name = 'tabllm'
+    embedding_bert_length = 8
 
-    def __init__(self, root, data_mode, transform=None):
+    def __init__(self, root, data_mode, process=False, transform=None):
         self.root = os.path.expanduser(root)
         self.data_mode = data_mode
         self.transform = transform
-        if not check_exists(self.processed_folder):
+        if not check_exists(os.path.join(self.processed_folder, self.data_mode)) or process:
             self.process()
         self.id, self.data, self.target = load(os.path.join(self.processed_folder, self.data_mode, 'data'))
         self.meta = load(os.path.join(self.processed_folder, self.data_mode, 'meta'))
@@ -53,12 +54,20 @@ class TabLLM(Dataset):
     def process(self):
         if not check_exists(self.raw_folder):
             self.download()
-        data_set, meta = self.make_numeric_data()
-        save(data_set, os.path.join(self.processed_folder, 'numeric', 'data'))
-        save(meta, os.path.join(self.processed_folder, 'numeric', 'meta'))
-        data_set, meta = self.make_semantic_data()
-        save(data_set, os.path.join(self.processed_folder, 'semantic', 'data'))
-        save(meta, os.path.join(self.processed_folder, 'semantic', 'meta'))
+        if self.data_mode == 'numeric':
+            data_set, meta = self.make_numeric_data()
+            save(data_set, os.path.join(self.processed_folder, 'numeric', 'data'))
+            save(meta, os.path.join(self.processed_folder, 'numeric', 'meta'))
+        elif self.data_mode == 'semantic':
+            data_set, meta = self.make_semantic_data()
+            save(data_set, os.path.join(self.processed_folder, 'semantic', 'data'))
+            save(meta, os.path.join(self.processed_folder, 'semantic', 'meta'))
+        elif self.data_mode == 'embedding-bert':
+            data_set, meta = self.make_embedding_bert_data()
+            save(data_set, os.path.join(self.processed_folder, 'embedding-bert', 'data'))
+            save(meta, os.path.join(self.processed_folder, 'embedding-bert', 'meta'))
+        else:
+            raise ValueError('Not valid data mode')
         return
 
     def download(self):
@@ -66,12 +75,15 @@ class TabLLM(Dataset):
         return
 
     def __repr__(self):
-        return f'Dataset {self.__class__.__name__}\nSize: {self.__len__()}\nRoot: {self.root}\nSplit: {self.split}'
+        return f'Dataset {self.__class__.__name__}\nSize: {self.__len__()}\nRoot: {self.root}\nData mode: {self.data_mode}'
 
     def make_numeric_data(self):
         raise NotImplementedError
 
     def make_semantic_data(self):
+        raise NotImplementedError
+
+    def make_embedding_bert_data(self):
         raise NotImplementedError
 
 
@@ -85,52 +97,86 @@ class Bank(TabLLM):
                      'month', 'duration', 'campaign', 'pdays', 'previous', 'poutcome']
     target_names = ['deposit']
 
-    def make_numeric_data(self):
+    def make_data(self):
         columns = {'V' + str(i + 1): v for i, v in enumerate(self.feature_names)}
         dataset = pd.DataFrame(arff.loadarff(os.path.join(self.raw_folder, 'phpkIxskf.arff'))[0])
         dataset = byte_to_string_columns(dataset)
         dataset.rename(columns=columns, inplace=True)
         dataset.rename(columns={'Class': 'deposit'}, inplace=True)
         dataset['deposit'] = dataset['deposit'] == '2'
+        return dataset
+
+    def make_numeric_data(self):
+        dataset = self.make_data()
+
         dataset['deposit'] = dataset['deposit'].astype(int)
         for col in dataset.select_dtypes(include=['object']).columns:
             le = LabelEncoder()
             dataset[col] = le.fit_transform(dataset[col])
             dataset[col] = dataset[col].astype(float)
         dataset = dataset.to_numpy()
-        X, y = dataset[:, :-1], dataset[:, -1]
-        data = X.astype(np.float32)
-        target = y.astype(np.int64)
+        data, target = dataset[:, :-1], dataset[:, -1]
+        data = data.astype(np.float32)
+        target = target.astype(np.int64)
         id = np.arange(len(data)).astype(np.int64)
         data_set = (id, data, target)
+
         classes = ['False', 'True']
         classes_to_labels = {classes[i]: i for i in range(len(classes))}
-        data_size = list(X.shape[1:])
+        data_size = list(data.shape[1:])
         target_size = len(classes)
         meta = {'data_size': data_size, 'target_size': target_size, 'classes_to_labels': classes_to_labels}
         return data_set, meta
 
     def make_semantic_data(self):
-        columns = {'V' + str(i + 1): v for i, v in enumerate(self.feature_names)}
-        dataset = pd.DataFrame(arff.loadarff(os.path.join(self.raw_folder, 'phpkIxskf.arff'))[0])
-        dataset = byte_to_string_columns(dataset)
-        dataset.rename(columns=columns, inplace=True)
-        dataset.rename(columns={'Class': 'deposit'}, inplace=True)
-        dataset['deposit'] = dataset['deposit'] == '2'
+        dataset = self.make_data()
+
         dataset = dataset.astype(str)
         data, target = dataset.iloc[:, :-1], dataset.iloc[:, [-1]]
         data = data.apply(convert_to_semantic, axis=1)
-        data = data.to_numpy()
         target = target.apply(convert_to_semantic, axis=1)
+        data = data.to_numpy()
         target = target.to_numpy()
         id = np.arange(len(data)).astype(np.int64)
         data_set = (id, data, target)
+
         classes = ['False', 'True']
         classes_to_labels = {classes[i]: i for i in range(len(classes))}
-        data_size = len(data[0])
+        data_size = None
         target_size = len(classes)
         meta = {'data_size': data_size, 'target_size': target_size, 'classes_to_labels': classes_to_labels}
         return data_set, meta
+
+    def make_bert_embedding_data(self):
+        from transformers import AutoTokenizer
+
+        def transform(data_):
+            data_ = [element for tup in data_ for element in tup]
+            data_ = tokenizer(data_, return_tensors="pt", padding='max_length',
+                             max_length=self.embedding_bert_length, truncation=True)
+            data['target_semantic'] = example['target'][0][1] # TODO: should parse all data in batch
+            if 'classes_to_labels' in dataset['train'].meta:
+                data['target_numeric'] = torch.tensor(dataset['train'].meta['classes_to_labels'] \
+                                                          [data['target_semantic']], dtype=torch.long)
+            else:
+                data['target_numeric'] = torch.tensor(float(data['target_semantic']), dtype=torch.float32)
+            return data
+
+        bert_model_name = 'intfloat/multilingual-e5-large-instruct'
+        cache_dir = os.path.join('output', 'cache')
+        cache_tokenizer_path = os.path.join(cache_dir, bert_model_name, 'tokenizer')
+        if not os.path.exists(os.path.join(cache_dir, bert_model_name)):
+            local_files_only = False
+        else:
+            local_files_only = True
+        dataset = self.make_data()
+        tokenizer = AutoTokenizer.from_pretrained(bert_model_name, trust_remote_code=True,
+                                                  cache_dir=cache_tokenizer_path, local_files_only=local_files_only)
+        dataset = dataset.astype(str)
+        for i in range(len(dataset)):
+            dataset.loc[i] = 123
+
+        return
 
 
 class Blood(TabLLM):
