@@ -46,7 +46,7 @@ if __name__ == "__main__":
     cfg['seed'] = 0
     cfg['tag'] = 'make_dataset'
     cfg['make_stats'] = True
-    process = False
+    process = True
     with torch.no_grad():
         for data_name in data_names:
             for data_mode in data_modes:

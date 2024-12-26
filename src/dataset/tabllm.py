@@ -54,20 +54,15 @@ class TabLLM(Dataset):
     def process(self):
         if not check_exists(self.raw_folder):
             self.download()
-        if self.data_mode == 'numeric':
-            data_set, meta = self.make_numeric_data()
-            save(data_set, os.path.join(self.processed_folder, 'numeric', 'data'))
-            save(meta, os.path.join(self.processed_folder, 'numeric', 'meta'))
-        elif self.data_mode == 'semantic':
-            data_set, meta = self.make_semantic_data()
-            save(data_set, os.path.join(self.processed_folder, 'semantic', 'data'))
-            save(meta, os.path.join(self.processed_folder, 'semantic', 'meta'))
-        elif self.data_mode == 'embedding-bert':
-            data_set, meta = self.make_embedding_bert_data()
-            save(data_set, os.path.join(self.processed_folder, 'embedding-bert', 'data'))
-            save(meta, os.path.join(self.processed_folder, 'embedding-bert', 'meta'))
-        else:
-            raise ValueError('Not valid data mode')
+        # data_set, meta = self.make_numeric_data()
+        # save(data_set, os.path.join(self.processed_folder, 'numeric', 'data'))
+        # save(meta, os.path.join(self.processed_folder, 'numeric', 'meta'))
+        # data_set, meta = self.make_semantic_data()
+        # save(data_set, os.path.join(self.processed_folder, 'semantic', 'data'))
+        # save(meta, os.path.join(self.processed_folder, 'semantic', 'meta'))
+        data_set, meta = self.make_embedding_encoder_data()
+        save(data_set, os.path.join(self.processed_folder, 'embedding-encoder', 'data'))
+        save(meta, os.path.join(self.processed_folder, 'embedding-encoder', 'meta'))
         return
 
     def download(self):
@@ -83,7 +78,7 @@ class TabLLM(Dataset):
     def make_semantic_data(self):
         raise NotImplementedError
 
-    def make_embedding_bert_data(self):
+    def make_embedding_encoder_data(self):
         raise NotImplementedError
 
 
@@ -96,6 +91,7 @@ class Bank(TabLLM):
     feature_names = ['age', 'job', 'marital', 'education', 'default', 'balance', 'housing', 'loan', 'contact', 'day',
                      'month', 'duration', 'campaign', 'pdays', 'previous', 'poutcome']
     target_names = ['deposit']
+    encoder_model_name = 'intfloat/multilingual-e5-large-instruct'
 
     def make_data(self):
         columns = {'V' + str(i + 1): v for i, v in enumerate(self.feature_names)}
@@ -147,35 +143,40 @@ class Bank(TabLLM):
         meta = {'data_size': data_size, 'target_size': target_size, 'classes_to_labels': classes_to_labels}
         return data_set, meta
 
-    def make_bert_embedding_data(self):
+    def make_embedding_encoder_data(self):
         from transformers import AutoTokenizer
 
         def transform(data_):
             data_ = [element for tup in data_ for element in tup]
             data_ = tokenizer(data_, return_tensors="pt", padding='max_length',
-                             max_length=self.embedding_bert_length, truncation=True)
-            data['target_semantic'] = example['target'][0][1] # TODO: should parse all data in batch
-            if 'classes_to_labels' in dataset['train'].meta:
-                data['target_numeric'] = torch.tensor(dataset['train'].meta['classes_to_labels'] \
-                                                          [data['target_semantic']], dtype=torch.long)
-            else:
-                data['target_numeric'] = torch.tensor(float(data['target_semantic']), dtype=torch.float32)
-            return data
+                              max_length=self.embedding_bert_length, truncation=True)
+            # data_['labels'] = data_['input_ids'][-1].clone().detach()
+            # data_['input_ids'][-1][:] = tokenizer.mask_token_id
+            # data_['attention_mask'][-1][:] = 1
+            # print(data_['labels'].size(), data_['input_ids'].size(), data_['attention_mask'].size())
+            # print(data_['labels'], data_['input_ids'], data_['attention_mask'])
+            return data_
 
-        bert_model_name = 'intfloat/multilingual-e5-large-instruct'
         cache_dir = os.path.join('output', 'cache')
-        cache_tokenizer_path = os.path.join(cache_dir, bert_model_name, 'tokenizer')
-        if not os.path.exists(os.path.join(cache_dir, bert_model_name)):
+        cache_tokenizer_path = os.path.join(cache_dir, self.encoder_model_name, 'tokenizer')
+        if not os.path.exists(os.path.join(cache_dir, self.encoder_model_name)):
             local_files_only = False
         else:
             local_files_only = True
         dataset = self.make_data()
-        tokenizer = AutoTokenizer.from_pretrained(bert_model_name, trust_remote_code=True,
+        tokenizer = AutoTokenizer.from_pretrained(self.encoder_model_name, trust_remote_code=True,
                                                   cache_dir=cache_tokenizer_path, local_files_only=local_files_only)
         dataset = dataset.astype(str)
+        dataset = dataset.apply(convert_to_semantic, axis=1)
+        dataset = dataset.to_numpy()
+        data = {'input_ids': [], 'attention_mask': []}
         for i in range(len(dataset)):
-            dataset.loc[i] = 123
-
+            data_i = transform(dataset[i])
+            for key in data:
+                data[key].append(data_i[key])
+        for key in data:
+            data[key] = torch.stack(data[key], dim=0).numpy()
+            # print(data[key].shape)
         return
 
 
