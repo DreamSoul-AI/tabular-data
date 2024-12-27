@@ -6,6 +6,7 @@ from scipy.io import arff
 from sklearn.preprocessing import LabelEncoder
 from torch.utils.data import Dataset
 from module import check_exists, makedir_exist_ok, save, load
+from config import cfg
 
 
 class TabLLM(Dataset):
@@ -144,21 +145,43 @@ class Bank(TabLLM):
         return data_set, meta
 
     def make_embedding_encoder_data(self):
-        from transformers import AutoTokenizer
+        from transformers import AutoTokenizer, AutoConfig, AutoModel
 
         def transform(data_):
-            data_ = [element for tup in data_ for element in tup]
-            data_ = tokenizer(data_, return_tensors="pt", padding='max_length',
-                              max_length=self.embedding_bert_length, truncation=True)
+            testdata_ = [element for data_i_ in data_ for tup in data_i_ for element in tup]
+            test = tokenizer(testdata_, return_tensors="pt", padding='max_length',
+                      max_length=self.embedding_bert_length, truncation=True)
+            print(test['input_ids'])
+            print(test['input_ids'].view(batch_size, -1, test['input_ids'].size(-1)))
+
+            # tokenized_data = {'input_ids': [], 'attention_mask': []}
+            # for data_i_ in data_:
+            #     flatten_data_i = [element for tup in data_i_ for element in tup]
+            #     tokenized_data_i = tokenizer(flatten_data_i, return_tensors="pt", padding='max_length',
+            #                                  max_length=self.embedding_bert_length, truncation=True)
+            #     tokenized_data['input_ids'].append(tokenized_data_i['input_ids'])
+            #     tokenized_data['attention_mask'].append(tokenized_data_i['attention_mask'])
+            # tokenized_data['input_ids'] = torch.cat(tokenized_data['input_ids'], dim=0)
+            # tokenized_data['attention_mask'] = torch.cat(tokenized_data['attention_mask'], dim=0)
+            # print(tokenized_data['input_ids'])
+            exit()
+            data_ = data_.to(cfg['device'])
+            with torch.no_grad():
+                data_ = model(**data_).last_hidden_state
             # data_['labels'] = data_['input_ids'][-1].clone().detach()
             # data_['input_ids'][-1][:] = tokenizer.mask_token_id
             # data_['attention_mask'][-1][:] = 1
             # print(data_['labels'].size(), data_['input_ids'].size(), data_['attention_mask'].size())
             # print(data_['labels'], data_['input_ids'], data_['attention_mask'])
+            print(data_.size())
+            print(data_.view(data_.size(0), -1, data_.size(-2), data_.size(-1)))
+            exit()
             return data_
 
         cache_dir = os.path.join('output', 'cache')
         cache_tokenizer_path = os.path.join(cache_dir, self.encoder_model_name, 'tokenizer')
+        cache_config_path = os.path.join(cache_dir, self.encoder_model_name, 'config')
+        cache_model_path = os.path.join(cache_dir, self.encoder_model_name, 'model')
         if not os.path.exists(os.path.join(cache_dir, self.encoder_model_name)):
             local_files_only = False
         else:
@@ -166,17 +189,28 @@ class Bank(TabLLM):
         dataset = self.make_data()
         tokenizer = AutoTokenizer.from_pretrained(self.encoder_model_name, trust_remote_code=True,
                                                   cache_dir=cache_tokenizer_path, local_files_only=local_files_only)
+        config = AutoConfig.from_pretrained(self.encoder_model_name, trust_remote_code=True,
+                                            cache_dir=cache_config_path, local_files_only=local_files_only)
+        model = AutoModel.from_pretrained(self.encoder_model_name, trust_remote_code=True,
+                                          cache_dir=cache_model_path, config=config, local_files_only=local_files_only)
+        model = model.to(cfg['device'])
         dataset = dataset.astype(str)
         dataset = dataset.apply(convert_to_semantic, axis=1)
         dataset = dataset.to_numpy()
-        data = {'input_ids': [], 'attention_mask': []}
-        for i in range(len(dataset)):
-            data_i = transform(dataset[i])
+        data = {'last_hidden_state': [], 'pooler_output': []}
+        batch_size = 2
+        for i in range(0, len(dataset), batch_size):
+            print(i)
+            data_i = dataset[i:i + batch_size]
+            data_i = transform(data_i)
             for key in data:
-                data[key].append(data_i[key])
+                data[key].append(data_i[key].view(batch_size, -1, data_i[key].size(-2), data_i[key].size(-1)))
+            if i == 2 * batch_size:
+                break
         for key in data:
-            data[key] = torch.stack(data[key], dim=0).numpy()
-            # print(data[key].shape)
+            data[key] = torch.cat(data[key], dim=0).cpu().numpy()
+            print(data[key].shape)
+        exit()
         return
 
 
