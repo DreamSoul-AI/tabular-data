@@ -12,7 +12,7 @@ from config import cfg
 class TabLLM(Dataset):
     data_name = 'TabLLM'
     raw_data_name = 'tabllm'
-    embedding_bert_length = 8
+    encoder_embedding_length = 8
 
     def __init__(self, root, data_mode, process=False, transform=None):
         self.root = os.path.expanduser(root)
@@ -61,9 +61,9 @@ class TabLLM(Dataset):
         # data_set, meta = self.make_semantic_data()
         # save(data_set, os.path.join(self.processed_folder, 'semantic', 'data'))
         # save(meta, os.path.join(self.processed_folder, 'semantic', 'meta'))
-        data_set, meta = self.make_embedding_encoder_data()
-        save(data_set, os.path.join(self.processed_folder, 'embedding-encoder', 'data'))
-        save(meta, os.path.join(self.processed_folder, 'embedding-encoder', 'meta'))
+        data_set, meta = self.make_encoder_embedding_data()
+        save(data_set, os.path.join(self.processed_folder, 'encoder-embedding', 'data'))
+        save(meta, os.path.join(self.processed_folder, 'encoder-embedding', 'meta'))
         return
 
     def download(self):
@@ -79,7 +79,7 @@ class TabLLM(Dataset):
     def make_semantic_data(self):
         raise NotImplementedError
 
-    def make_embedding_encoder_data(self):
+    def make_encoder_embedding_data(self):
         raise NotImplementedError
 
 
@@ -144,38 +144,18 @@ class Bank(TabLLM):
         meta = {'data_size': data_size, 'target_size': target_size, 'classes_to_labels': classes_to_labels}
         return data_set, meta
 
-    def make_embedding_encoder_data(self):
+    def make_encoder_embedding_data(self):
         from transformers import AutoTokenizer, AutoConfig, AutoModel
 
         def transform(data_):
-            testdata_ = [element for data_i_ in data_ for tup in data_i_ for element in tup]
-            test = tokenizer(testdata_, return_tensors="pt", padding='max_length',
-                      max_length=self.embedding_bert_length, truncation=True)
-            print(test['input_ids'])
-            print(test['input_ids'].view(batch_size, -1, test['input_ids'].size(-1)))
-
-            # tokenized_data = {'input_ids': [], 'attention_mask': []}
-            # for data_i_ in data_:
-            #     flatten_data_i = [element for tup in data_i_ for element in tup]
-            #     tokenized_data_i = tokenizer(flatten_data_i, return_tensors="pt", padding='max_length',
-            #                                  max_length=self.embedding_bert_length, truncation=True)
-            #     tokenized_data['input_ids'].append(tokenized_data_i['input_ids'])
-            #     tokenized_data['attention_mask'].append(tokenized_data_i['attention_mask'])
-            # tokenized_data['input_ids'] = torch.cat(tokenized_data['input_ids'], dim=0)
-            # tokenized_data['attention_mask'] = torch.cat(tokenized_data['attention_mask'], dim=0)
-            # print(tokenized_data['input_ids'])
-            exit()
+            data_ = [element for data_i_ in data_ for tup in data_i_ for element in tup]
+            data_ = tokenizer(data_, return_tensors="pt", padding='max_length',
+                              max_length=self.encoder_embedding_length, truncation=True)
             data_ = data_.to(cfg['device'])
             with torch.no_grad():
                 data_ = model(**data_).last_hidden_state
-            # data_['labels'] = data_['input_ids'][-1].clone().detach()
-            # data_['input_ids'][-1][:] = tokenizer.mask_token_id
-            # data_['attention_mask'][-1][:] = 1
-            # print(data_['labels'].size(), data_['input_ids'].size(), data_['attention_mask'].size())
-            # print(data_['labels'], data_['input_ids'], data_['attention_mask'])
-            print(data_.size())
-            print(data_.view(data_.size(0), -1, data_.size(-2), data_.size(-1)))
-            exit()
+            data_ = data_.view(batch_size, -1, data_.size(-2), data_.size(-1))
+            # TODO: add mask and target
             return data_
 
         cache_dir = os.path.join('output', 'cache')
@@ -189,6 +169,8 @@ class Bank(TabLLM):
         dataset = self.make_data()
         tokenizer = AutoTokenizer.from_pretrained(self.encoder_model_name, trust_remote_code=True,
                                                   cache_dir=cache_tokenizer_path, local_files_only=local_files_only)
+        print(tokenizer.mask_token_id)
+        exit()
         config = AutoConfig.from_pretrained(self.encoder_model_name, trust_remote_code=True,
                                             cache_dir=cache_config_path, local_files_only=local_files_only)
         model = AutoModel.from_pretrained(self.encoder_model_name, trust_remote_code=True,
@@ -197,19 +179,15 @@ class Bank(TabLLM):
         dataset = dataset.astype(str)
         dataset = dataset.apply(convert_to_semantic, axis=1)
         dataset = dataset.to_numpy()
-        data = {'last_hidden_state': [], 'pooler_output': []}
-        batch_size = 2
+        data = []
+        batch_size = 100
         for i in range(0, len(dataset), batch_size):
             print(i)
             data_i = dataset[i:i + batch_size]
             data_i = transform(data_i)
-            for key in data:
-                data[key].append(data_i[key].view(batch_size, -1, data_i[key].size(-2), data_i[key].size(-1)))
-            if i == 2 * batch_size:
-                break
-        for key in data:
-            data[key] = torch.cat(data[key], dim=0).cpu().numpy()
-            print(data[key].shape)
+            data.append(data_i.cpu().numpy())
+        data = torch.cat(data, dim=0)
+        print(data.shape)
         exit()
         return
 
