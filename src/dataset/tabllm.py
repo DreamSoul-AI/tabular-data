@@ -151,12 +151,19 @@ class Bank(TabLLM):
             data_ = [element for data_i_ in data_ for tup in data_i_ for element in tup]
             data_ = tokenizer(data_, return_tensors="pt", padding='max_length',
                               max_length=self.encoder_embedding_length, truncation=True)
-            data_ = data_.to(cfg['device'])
+            data_['input_ids'] = data_['input_ids'].view(batch_size, -1, data_['input_ids'].size(-1))
+            data_['attention_mask'] = data_['attention_mask'].view(batch_size, -1, data_['attention_mask'].size(-1))
+            target = data_['input_ids'][:, -1].clone()
+            data_['input_ids'][:, -1][:] = tokenizer.mask_token_id # TODO: change this
+            data_['attention_mask'][:, -1][:] = 1
+            data_['input_ids'] = data_['input_ids'].view(-1, data_['input_ids'].size(-1))
+            data_['attention_mask'] = data_['attention_mask'].view(-1, data_['attention_mask'].size(-1))
             with torch.no_grad():
+                data_.to(cfg['device'])
                 data_ = model(**data_).last_hidden_state
-            data_ = data_.view(batch_size, -1, data_.size(-2), data_.size(-1))
-            # TODO: add mask and target
-            return data_
+                data_ = data_.view(batch_size, -1, data_.size(-2), data_.size(-1))
+            output = {'data': data_, 'target': target}
+            return output
 
         cache_dir = os.path.join('output', 'cache')
         cache_tokenizer_path = os.path.join(cache_dir, self.encoder_model_name, 'tokenizer')
@@ -169,8 +176,6 @@ class Bank(TabLLM):
         dataset = self.make_data()
         tokenizer = AutoTokenizer.from_pretrained(self.encoder_model_name, trust_remote_code=True,
                                                   cache_dir=cache_tokenizer_path, local_files_only=local_files_only)
-        print(tokenizer.mask_token_id)
-        exit()
         config = AutoConfig.from_pretrained(self.encoder_model_name, trust_remote_code=True,
                                             cache_dir=cache_config_path, local_files_only=local_files_only)
         model = AutoModel.from_pretrained(self.encoder_model_name, trust_remote_code=True,
@@ -180,14 +185,20 @@ class Bank(TabLLM):
         dataset = dataset.apply(convert_to_semantic, axis=1)
         dataset = dataset.to_numpy()
         data = []
+        target = []
         batch_size = 100
         for i in range(0, len(dataset), batch_size):
             print(i)
             data_i = dataset[i:i + batch_size]
-            data_i = transform(data_i)
-            data.append(data_i.cpu().numpy())
-        data = torch.cat(data, dim=0)
+            transformed_data = transform(data_i)
+            data.append(transformed_data['data'].cpu())
+            target.append(transformed_data['target'].cpu())
+            if i == 200:
+                break
+        data = torch.cat(data, dim=0).numpy()
+        target = torch.cat(target, dim=0).numpy()
         print(data.shape)
+        print(target.shape)
         exit()
         return
 
