@@ -13,6 +13,8 @@ def process_control():
         cfg['batch_size'] = 256
     elif cfg['data_mode'] == 'semantic':
         cfg['batch_size'] = 2
+    elif cfg['data_mode'] == 'encoder-embedding':
+        cfg['batch_size'] = 2
     else:
         raise ValueError('Not valid data mode')
     cfg['step_period'] = 1

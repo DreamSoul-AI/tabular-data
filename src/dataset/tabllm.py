@@ -18,8 +18,8 @@ class TabLLM(Dataset):
         self.root = os.path.expanduser(root)
         self.data_mode = data_mode
         self.transform = transform
-        if not check_exists(os.path.join(self.processed_folder, self.data_mode)) or process:
-            self.process()
+        if not check_exists(os.path.join(self.processed_folder)) or process:
+            self.process(process)
         self.id, self.data, self.target = load(os.path.join(self.processed_folder, self.data_mode, 'data'))
         self.meta = load(os.path.join(self.processed_folder, self.data_mode, 'meta'))
         self.data_size = self.meta['data_size']
@@ -52,18 +52,21 @@ class TabLLM(Dataset):
     def raw_folder(self):
         return os.path.join(self.root, 'raw', 'datasets', self.raw_data_name)
 
-    def process(self):
+    def process(self, process):
         if not check_exists(self.raw_folder):
             self.download()
-        # data_set, meta = self.make_numeric_data()
-        # save(data_set, os.path.join(self.processed_folder, 'numeric', 'data'))
-        # save(meta, os.path.join(self.processed_folder, 'numeric', 'meta'))
-        # data_set, meta = self.make_semantic_data()
-        # save(data_set, os.path.join(self.processed_folder, 'semantic', 'data'))
-        # save(meta, os.path.join(self.processed_folder, 'semantic', 'meta'))
-        data_set, meta = self.make_encoder_embedding_data()
-        save(data_set, os.path.join(self.processed_folder, 'encoder-embedding', 'data'))
-        save(meta, os.path.join(self.processed_folder, 'encoder-embedding', 'meta'))
+        if not check_exists(os.path.join(self.processed_folder, 'numeric')) or process:
+            data_set, meta = self.make_numeric_data()
+            save(data_set, os.path.join(self.processed_folder, 'numeric', 'data'))
+            save(meta, os.path.join(self.processed_folder, 'numeric', 'meta'))
+        if not check_exists(os.path.join(self.processed_folder, 'semantic')) or process:
+            data_set, meta = self.make_semantic_data()
+            save(data_set, os.path.join(self.processed_folder, 'semantic', 'data'))
+            save(meta, os.path.join(self.processed_folder, 'semantic', 'meta'))
+        if not check_exists(os.path.join(self.processed_folder, 'encoder-embedding')) or process:
+            data_set, meta = self.make_encoder_embedding_data()
+            save(data_set, os.path.join(self.processed_folder, 'encoder-embedding', 'data'))
+            save(meta, os.path.join(self.processed_folder, 'encoder-embedding', 'meta'))
         return
 
     def download(self):
@@ -144,26 +147,26 @@ class Bank(TabLLM):
         meta = {'data_size': data_size, 'target_size': target_size, 'classes_to_labels': classes_to_labels}
         return data_set, meta
 
-    def make_encoder_embedding_data(self):
+    def make_encoder_embedding_data(self): # TODO: this cost too much disk
         from transformers import AutoTokenizer, AutoConfig, AutoModel
 
         def transform(data_):
             data_ = [element for data_i_ in data_ for tup in data_i_ for element in tup]
             data_ = tokenizer(data_, return_tensors="pt", padding='max_length',
                               max_length=self.encoder_embedding_length, truncation=True)
-            data_['input_ids'] = data_['input_ids'].view(batch_size, -1, data_['input_ids'].size(-1))
-            data_['attention_mask'] = data_['attention_mask'].view(batch_size, -1, data_['attention_mask'].size(-1))
-            target = data_['input_ids'][:, -1].clone()
-            data_['input_ids'][:, -1][:] = tokenizer.mask_token_id # TODO: change this
-            data_['attention_mask'][:, -1][:] = 1
+            # data_['input_ids'] = data_['input_ids'].view(batch_size, -1, data_['input_ids'].size(-1))
+            # data_['attention_mask'] = data_['attention_mask'].view(batch_size, -1, data_['attention_mask'].size(-1))
+            # target = data_['input_ids'][:, -1].clone()
+            # data_['input_ids'][:, -1][:] = tokenizer.mask_token_id # TODO: change this
+            # data_['attention_mask'][:, -1][:] = 1
             data_['input_ids'] = data_['input_ids'].view(-1, data_['input_ids'].size(-1))
             data_['attention_mask'] = data_['attention_mask'].view(-1, data_['attention_mask'].size(-1))
             with torch.no_grad():
                 data_.to(cfg['device'])
                 data_ = model(**data_).last_hidden_state
                 data_ = data_.view(batch_size, -1, data_.size(-2), data_.size(-1))
-            output = {'data': data_, 'target': target}
-            return output
+            # output = {'data': data_, 'target': target}
+            return data_
 
         cache_dir = os.path.join('output', 'cache')
         cache_tokenizer_path = os.path.join(cache_dir, self.encoder_model_name, 'tokenizer')
@@ -185,22 +188,26 @@ class Bank(TabLLM):
         dataset = dataset.apply(convert_to_semantic, axis=1)
         dataset = dataset.to_numpy()
         data = []
-        target = []
+        # target = []
         batch_size = 100
         for i in range(0, len(dataset), batch_size):
             print(i)
             data_i = dataset[i:i + batch_size]
-            transformed_data = transform(data_i)
-            data.append(transformed_data['data'].cpu())
-            target.append(transformed_data['target'].cpu())
+            # transformed_data =
+            data.append(transform(data_i).cpu())
+            # target.append(transformed_data['target'].cpu())
             if i == 200:
                 break
         data = torch.cat(data, dim=0).numpy()
-        target = torch.cat(target, dim=0).numpy()
-        print(data.shape)
-        print(target.shape)
-        exit()
-        return
+        id = np.arange(len(data)).astype(np.int64)
+        target = None
+        data_set = (id, data, target)
+        # target = torch.cat(target, dim=0).numpy()
+        # print(data.shape)
+        # print(target.shape)
+        data_size = list(data.shape[1:])
+        meta = {'data_size': data_size}
+        return data_set, meta
 
 
 class Blood(TabLLM):
