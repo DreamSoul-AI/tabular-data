@@ -18,12 +18,19 @@ class TabLLM(Dataset):
         self.root = os.path.expanduser(root)
         self.data_mode = data_mode
         self.transform = transform
-        if not check_exists(os.path.join(self.processed_folder)) or process:
+        if not check_exists(self.processed_folder) or process:
             self.process(process)
-        self.id, self.data, self.target = load(os.path.join(self.processed_folder, self.data_mode, 'data'))
-        self.meta = load(os.path.join(self.processed_folder, self.data_mode, 'meta'))
-        self.data_size = self.meta['data_size']
-        self.target_size = self.meta['target_size']
+        self.data = {}
+        self.target = {}
+        self.meta = {}
+        self.id, self.data['numeric'], self.target['numeric'] = load(
+            os.path.join(self.processed_folder, 'numeric', 'data'))
+        self.id, self.data['semantic'], self.target['semantic'] = load(
+            os.path.join(self.processed_folder, 'semantic', 'data'))
+        self.meta['numeric'] = load(os.path.join(self.processed_folder, 'numeric', 'meta'))
+        self.meta['semantic'] = load(os.path.join(self.processed_folder, 'semantic', 'meta'))
+        # self.data_size = self.meta['data_size']
+        # self.target_size = self.meta['target_size']
         if os.path.exists(os.path.join(self.processed_folder, '{}.txt'.format(self.data_name))):
             with open(os.path.join(self.processed_folder, '{}.txt'.format(self.data_name)), 'r') as file:
                 self.description = file.read()
@@ -31,12 +38,12 @@ class TabLLM(Dataset):
             self.description = None
 
     def __getitem__(self, index):
-        id, data, target = torch.tensor(self.id[index]), self.data[index], self.target[index]
-        if self.data_mode == 'numeric':
-            data = torch.tensor(data)
-            target = torch.tensor(target)
-        input = {'id': id, 'data': data, 'target': target, 'description': self.description,
-                 'feature_names': self.feature_names, 'target_names': self.target_names}
+        input = {'id': torch.tensor(self.id[index]),
+                 'numeric': {'data': torch.tensor(self.data['numeric'][index]),
+                             'target': self.target['numeric'][index]},
+                 'semantic': {'data': torch.tensor(self.data['semantic'][index]),
+                              'target': self.target['semantic'][index]},
+                 'description': self.description}
         if self.transform is not None:
             input = self.transform(input)
         return input
@@ -63,10 +70,10 @@ class TabLLM(Dataset):
             data_set, meta = self.make_semantic_data()
             save(data_set, os.path.join(self.processed_folder, 'semantic', 'data'))
             save(meta, os.path.join(self.processed_folder, 'semantic', 'meta'))
-        if not check_exists(os.path.join(self.processed_folder, 'encoder-embedding')) or process:
-            data_set, meta = self.make_encoder_embedding_data()
-            save(data_set, os.path.join(self.processed_folder, 'encoder-embedding', 'data'))
-            save(meta, os.path.join(self.processed_folder, 'encoder-embedding', 'meta'))
+        # if not check_exists(os.path.join(self.processed_folder, 'encoder-embedding')) or process:
+        #     data_set, meta = self.make_encoder_embedding_data()
+        #     save(data_set, os.path.join(self.processed_folder, 'encoder-embedding', 'data'))
+        #     save(meta, os.path.join(self.processed_folder, 'encoder-embedding', 'meta'))
         return
 
     def download(self):
@@ -147,67 +154,54 @@ class Bank(TabLLM):
         meta = {'data_size': data_size, 'target_size': target_size, 'classes_to_labels': classes_to_labels}
         return data_set, meta
 
-    def make_encoder_embedding_data(self): # TODO: this cost too much disk
-        from transformers import AutoTokenizer, AutoConfig, AutoModel
-
-        def transform(data_):
-            data_ = [element for data_i_ in data_ for tup in data_i_ for element in tup]
-            data_ = tokenizer(data_, return_tensors="pt", padding='max_length',
-                              max_length=self.encoder_embedding_length, truncation=True)
-            # data_['input_ids'] = data_['input_ids'].view(batch_size, -1, data_['input_ids'].size(-1))
-            # data_['attention_mask'] = data_['attention_mask'].view(batch_size, -1, data_['attention_mask'].size(-1))
-            # target = data_['input_ids'][:, -1].clone()
-            # data_['input_ids'][:, -1][:] = tokenizer.mask_token_id # TODO: change this
-            # data_['attention_mask'][:, -1][:] = 1
-            data_['input_ids'] = data_['input_ids'].view(-1, data_['input_ids'].size(-1))
-            data_['attention_mask'] = data_['attention_mask'].view(-1, data_['attention_mask'].size(-1))
-            with torch.no_grad():
-                data_.to(cfg['device'])
-                data_ = model(**data_).last_hidden_state
-                data_ = data_.view(batch_size, -1, data_.size(-2), data_.size(-1))
-            # output = {'data': data_, 'target': target}
-            return data_
-
-        cache_dir = os.path.join('output', 'cache')
-        cache_tokenizer_path = os.path.join(cache_dir, self.encoder_model_name, 'tokenizer')
-        cache_config_path = os.path.join(cache_dir, self.encoder_model_name, 'config')
-        cache_model_path = os.path.join(cache_dir, self.encoder_model_name, 'model')
-        if not os.path.exists(os.path.join(cache_dir, self.encoder_model_name)):
-            local_files_only = False
-        else:
-            local_files_only = True
-        dataset = self.make_data()
-        tokenizer = AutoTokenizer.from_pretrained(self.encoder_model_name, trust_remote_code=True,
-                                                  cache_dir=cache_tokenizer_path, local_files_only=local_files_only)
-        config = AutoConfig.from_pretrained(self.encoder_model_name, trust_remote_code=True,
-                                            cache_dir=cache_config_path, local_files_only=local_files_only)
-        model = AutoModel.from_pretrained(self.encoder_model_name, trust_remote_code=True,
-                                          cache_dir=cache_model_path, config=config, local_files_only=local_files_only)
-        model = model.to(cfg['device'])
-        dataset = dataset.astype(str)
-        dataset = dataset.apply(convert_to_semantic, axis=1)
-        dataset = dataset.to_numpy()
-        data = []
-        # target = []
-        batch_size = 100
-        for i in range(0, len(dataset), batch_size):
-            print(i)
-            data_i = dataset[i:i + batch_size]
-            # transformed_data =
-            data.append(transform(data_i).cpu())
-            # target.append(transformed_data['target'].cpu())
-            if i == 200:
-                break
-        data = torch.cat(data, dim=0).numpy()
-        id = np.arange(len(data)).astype(np.int64)
-        target = None
-        data_set = (id, data, target)
-        # target = torch.cat(target, dim=0).numpy()
-        # print(data.shape)
-        # print(target.shape)
-        data_size = list(data.shape[1:])
-        meta = {'data_size': data_size}
-        return data_set, meta
+    # def make_encoder_embedding_data(self): # TODO: this cost too much disk
+    #     from transformers import AutoTokenizer, AutoConfig, AutoModel
+    #
+    #     def transform(data_):
+    #         data_ = [element for data_i_ in data_ for tup in data_i_ for element in tup]
+    #         data_ = tokenizer(data_, return_tensors="pt", padding='max_length',
+    #                           max_length=self.encoder_embedding_length, truncation=True)
+    #         data_['input_ids'] = data_['input_ids'].view(-1, data_['input_ids'].size(-1))
+    #         data_['attention_mask'] = data_['attention_mask'].view(-1, data_['attention_mask'].size(-1))
+    #         with torch.no_grad():
+    #             data_.to(cfg['device'])
+    #             data_ = model(**data_).last_hidden_state
+    #             data_ = data_.view(batch_size, -1, data_.size(-2), data_.size(-1))
+    #         return data_
+    #
+    #     cache_dir = os.path.join('output', 'cache')
+    #     cache_tokenizer_path = os.path.join(cache_dir, self.encoder_model_name, 'tokenizer')
+    #     cache_config_path = os.path.join(cache_dir, self.encoder_model_name, 'config')
+    #     cache_model_path = os.path.join(cache_dir, self.encoder_model_name, 'model')
+    #     if not os.path.exists(os.path.join(cache_dir, self.encoder_model_name)):
+    #         local_files_only = False
+    #     else:
+    #         local_files_only = True
+    #     dataset = self.make_data()
+    #     tokenizer = AutoTokenizer.from_pretrained(self.encoder_model_name, trust_remote_code=True,
+    #                                               cache_dir=cache_tokenizer_path, local_files_only=local_files_only)
+    #     config = AutoConfig.from_pretrained(self.encoder_model_name, trust_remote_code=True,
+    #                                         cache_dir=cache_config_path, local_files_only=local_files_only)
+    #     model = AutoModel.from_pretrained(self.encoder_model_name, trust_remote_code=True,
+    #                                       cache_dir=cache_model_path, config=config, local_files_only=local_files_only)
+    #     model = model.to(cfg['device'])
+    #     dataset = dataset.astype(str)
+    #     dataset = dataset.apply(convert_to_semantic, axis=1)
+    #     dataset = dataset.to_numpy()
+    #     data = []
+    #     batch_size = 100
+    #     for i in range(0, len(dataset), batch_size):
+    #         print(i)
+    #         data_i = dataset[i:i + batch_size]
+    #         data.append(transform(data_i).cpu())
+    #         if i == 200:
+    #             break
+    #     data = torch.cat(data, dim=0).numpy()
+    #     id = np.arange(len(data)).astype(np.int64)
+    #     target = None
+    #     data_set = (id, data, target)
+    #     meta = {'data_size': data_size}
+    #     return data_set, meta
 
 
 class Blood(TabLLM):
