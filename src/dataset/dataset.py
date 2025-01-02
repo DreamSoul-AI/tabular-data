@@ -112,8 +112,8 @@ def process_dataset(dataset, model=None, tokenizer=None):
         dataset['train'] = split_dataset(dataset['train'], split_index)
 
     cfg['sample_size'] = {k: len(processed_dataset[k]) for k in processed_dataset}
-    cfg['model']['data_size'] = processed_dataset['train'].data_size
-    cfg['model']['target_size'] = processed_dataset['train'].target_size
+    cfg['model']['data_size'] = processed_dataset['train'].meta['data_size']
+    cfg['model']['target_size'] = processed_dataset['train'].meta['target_size']
     if 'num_epochs' in cfg:
         cfg['num_steps'] = int(np.ceil(len(processed_dataset['train']) / cfg['batch_size'])) * cfg['num_epochs']
         cfg['eval_period'] = int(np.ceil(len(processed_dataset['train']) / cfg['batch_size']))
@@ -121,7 +121,7 @@ def process_dataset(dataset, model=None, tokenizer=None):
     if cfg['model_name'] in ['ridge', 'ann', 'svm', 'rf', 'gb', 'gp', 'dt']:
         cfg['num_steps'] = None
 
-    if cfg['data_mode'] == 'semantic':
+    if cfg['data_mode'] == 'semantic': # TODO: move this part to make semantic data
         class Compose(object):
             def __init__(self, transforms):
                 self.transforms = transforms

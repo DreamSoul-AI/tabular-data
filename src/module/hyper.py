@@ -34,7 +34,8 @@ def process_control():
     cfg['model']['ridge'] = {'regularization': 1}
     cfg['model']['ann'] = {'hidden_size': (128, 64), 'solver': 'adam'}
     if 'make_stats' not in cfg:
-        cfg['model']['stats'] = make_stats('{}_{}'.format(cfg['control']['data_name'], cfg['eval_mode']))
+        cfg['model']['stats'] = make_stats(
+            '{}_{}'.format(cfg['control']['data_name'], cfg['eval_mode']))
     cfg['model']['data_mode'] = cfg['data_mode']
     if cfg['data_name'] in ['CalHousingR']:
         cfg['model']['task_mode'] = 'regression'
@@ -43,7 +44,7 @@ def process_control():
         cfg['model']['task_mode'] = 'classification'
     else:
         raise ValueError('Not valid dataset name')
-    # cfg['model']['bert'] = {'hidden_size': 1024}
+    cfg['model']['bert'] = {'hidden_size': 1024}
     cfg['model']['max_length'] = 8
     cfg['model']['mask_mode'] = 'target'
 
