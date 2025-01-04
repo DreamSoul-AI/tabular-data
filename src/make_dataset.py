@@ -39,8 +39,8 @@ if __name__ == "__main__":
     # data_names = ['Bank', 'Blood', 'CalHousingC', 'CalHousingR', 'Car', 'CreditG', 'Diabetes', 'Heart', 'Income',
     #               'Jungle']
     data_names = ['Bank']
-    data_modes = ['numeric', 'semantic']
-    # data_modes = ['semantic']
+    # data_modes = ['numeric', 'semantic']
+    data_modes = ['semantic']
     # eval_modes = ['0.9-holdout', '3-fold', '10-fold']
     eval_modes = ['0.9-holdout']
     cfg['seed'] = 0
@@ -67,7 +67,7 @@ if __name__ == "__main__":
                             if cfg['model']['task_mode'] == 'regression':
                                 stats_i['target'] = Stats(dim=1)
                             for i, input in enumerate(data_loader['train']):
-                                stats_i['data'].update(input['data'])
+                                stats_i['numeric_data'].update(input['numeric_data'])
                                 if cfg['model']['task_mode'] == 'regression':
                                     stats_i['target'].update(input['target'])
                             stats.append(stats_i)

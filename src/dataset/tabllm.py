@@ -22,7 +22,8 @@ class TabLLM(Dataset):
         self.data = {}
         self.target = {}
         self.meta = {}
-        self.id, self.data, self.target = load(os.path.join(self.processed_folder, self.data_mode, 'data'))
+        self.id, self.numeric_data, self.target = load(os.path.join(self.processed_folder, 'numeric', 'data'))
+        _, self.semantic_data, _ = load(os.path.join(self.processed_folder, 'semantic', 'data'))
         self.meta = load(os.path.join(self.processed_folder, self.data_mode, 'meta'))
         if os.path.exists(os.path.join(self.processed_folder, '{}.txt'.format(self.data_name))):
             with open(os.path.join(self.processed_folder, '{}.txt'.format(self.data_name)), 'r') as file:
@@ -32,7 +33,8 @@ class TabLLM(Dataset):
 
     def __getitem__(self, index):
         input = {'id': torch.tensor(self.id[index]),
-                 'data': torch.tensor(self.data[index]),
+                 'numeric_data': torch.tensor(self.numeric_data[index]),
+                 'semantic_data': torch.tensor(self.semantic_data[index]),
                  'target': self.target[index],
                  'description': self.description}
         if self.transform is not None:
@@ -40,7 +42,7 @@ class TabLLM(Dataset):
         return input
 
     def __len__(self):
-        return len(self.data)
+        return len(self.id)
 
     @property
     def processed_folder(self):
@@ -127,39 +129,42 @@ class Bank(TabLLM):
         max_length = cfg['model']['max_length']
         seq_length = 2 * (len(self.feature_names) + len(self.target_names))
 
-        def transform(data_):
-            testdata_ = [element for data_i_ in data_ for tup in data_i_ for element in tup]
-            data_ = tokenizer(testdata_, return_tensors="pt", padding='max_length',
-                              max_length=max_length, truncation=True)
-            data_['input_ids'] = data_['input_ids'].view(-1, seq_length, max_length)
-            data_['attention_mask'] = data_['attention_mask'].view(-1, seq_length, max_length)
-            return data_
+        # def transform(data_):
+        #     testdata_ = [element for data_i_ in data_ for tup in data_i_ for element in tup]
+        #     data_ = tokenizer(testdata_, return_tensors="pt", padding='max_length',
+        #                       max_length=max_length, truncation=True)
+        #     data_['input_ids'] = data_['input_ids'].view(-1, seq_length, max_length)
+        #     data_['attention_mask'] = data_['attention_mask'].view(-1, seq_length, max_length)
+        #     return data_
 
         dataset = self.make_data()
         dataset = dataset.astype(str)
-        dataset = dataset.apply(convert_to_semantic, axis=1)
-        cache_dir = os.path.join('output', 'cache')
-        cache_tokenizer_path = os.path.join(cache_dir, self.encoder_model_name, 'tokenizer')
-        if not os.path.exists(os.path.join(cache_dir, self.encoder_model_name)):
-            local_files_only = False
-        else:
-            local_files_only = True
-        tokenizer = AutoTokenizer.from_pretrained(self.encoder_model_name, trust_remote_code=True,
-                                                  cache_dir=cache_tokenizer_path, local_files_only=local_files_only)
-        batch_size = 1000
-        data = {'input_ids': [], 'attention_mask': []}
-        for i in range(0, len(dataset), batch_size):
-            data_i = dataset[i:i + batch_size]
-            data_i = transform(data_i)
-            data['input_ids'].append(data_i['input_ids'])
-            data['attention_mask'].append(data_i['attention_mask'])
-        data['input_ids'] = torch.cat(data['input_ids'], dim=0)
-        data['attention_mask'] = torch.cat(data['attention_mask'], dim=0)
+        data = dataset.apply(convert_to_semantic, axis=1)
+
+        # cache_dir = os.path.join('output', 'cache')
+        # cache_tokenizer_path = os.path.join(cache_dir, self.encoder_model_name, 'tokenizer')
+        # if not os.path.exists(os.path.join(cache_dir, self.encoder_model_name)):
+        #     local_files_only = False
+        # else:
+        #     local_files_only = True
+        # tokenizer = AutoTokenizer.from_pretrained(self.encoder_model_name, trust_remote_code=True,
+        #                                           cache_dir=cache_tokenizer_path, local_files_only=local_files_only)
+        # batch_size = 1000
+        # data = {'input_ids': [], 'attention_mask': []}
+        # for i in range(0, len(dataset), batch_size):
+        #     data_i = dataset[i:i + batch_size]
+        #     data_i = transform(data_i)
+        #     data['input_ids'].append(data_i['input_ids'])
+        #     data['attention_mask'].append(data_i['attention_mask'])
+        # data['input_ids'] = torch.cat(data['input_ids'], dim=0)
+        # data['attention_mask'] = torch.cat(data['attention_mask'], dim=0)
+
         id = np.arange(len(data)).astype(np.int64)
         data_set = (id, data, None)
+        meta = {}
 
-        data_size = list(data['input_ids'].shape[1:])
-        meta = {'data_size': data_size}
+        # data_size = list(data['input_ids'].shape[1:])
+        # meta = {'data_size': data_size}
         return data_set, meta
 
 

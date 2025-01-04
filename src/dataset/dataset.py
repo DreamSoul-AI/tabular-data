@@ -112,8 +112,11 @@ def process_dataset(dataset, model=None, tokenizer=None):
         dataset['train'] = split_dataset(dataset['train'], split_index)
 
     cfg['sample_size'] = {k: len(processed_dataset[k]) for k in processed_dataset}
-    cfg['model']['data_size'] = processed_dataset['train'].meta['data_size']
-    cfg['model']['target_size'] = processed_dataset['train'].meta['target_size']
+    print(processed_dataset)
+    if 'data_size' in processed_dataset['train'].meta:
+        cfg['model']['data_size'] = processed_dataset['train'].meta['data_size']
+    if 'target_size' in processed_dataset['train'].meta:
+        cfg['model']['target_size'] = processed_dataset['train'].meta['target_size']
     if 'num_epochs' in cfg:
         cfg['num_steps'] = int(np.ceil(len(processed_dataset['train']) / cfg['batch_size'])) * cfg['num_epochs']
         cfg['eval_period'] = int(np.ceil(len(processed_dataset['train']) / cfg['batch_size']))
@@ -173,6 +176,7 @@ def process_dataset(dataset, model=None, tokenizer=None):
 def split_dataset(dataset, idx):
     dataset_ = copy.deepcopy(dataset)
     dataset_.id = [dataset.id[s] for s in idx]
-    dataset_.data = [dataset.data[s] for s in idx]
+    dataset_.data = [dataset.numeric_data[s] for s in idx]
+    dataset_.data = [dataset.semantic_data[s] for s in idx]
     dataset_.target = [dataset.target[s] for s in idx]
     return dataset_
