@@ -9,13 +9,13 @@ from torch.utils.data.dataloader import default_collate
 from config import cfg
 
 
-def make_dataset(data_name, data_mode, eval_mode=None, process=False, verbose=True):
+def make_dataset(data_name, eval_mode=None, process=False, verbose=True):
     if verbose:
-        print('fetching data {}({})...'.format(data_name, data_mode))
+        print('fetching data {}...'.format(data_name))
     if data_name in ['Bank', 'Blood', 'CalHousingC', 'CalHousingR', 'Car', 'CreditG', 'Diabetes', 'Heart', 'Income',
                      'Jungle']:
         root = os.path.join('data', 'TabLLM')
-        raw_dataset = eval('dataset.{}(root=root, data_mode=data_mode, process=process)'.format(data_name, data_mode))
+        raw_dataset = eval('dataset.{}(root=root, process=process)'.format(data_name))
     else:
         raise ValueError('Not valid dataset name')
     eval_mode = '0.9-holdout' if eval_mode is None else eval_mode
@@ -112,7 +112,6 @@ def process_dataset(dataset, model=None, tokenizer=None):
         dataset['train'] = split_dataset(dataset['train'], split_index)
 
     cfg['sample_size'] = {k: len(processed_dataset[k]) for k in processed_dataset}
-    print(processed_dataset)
     if 'data_size' in processed_dataset['train'].meta:
         cfg['model']['data_size'] = processed_dataset['train'].meta['data_size']
     if 'target_size' in processed_dataset['train'].meta:
@@ -123,53 +122,6 @@ def process_dataset(dataset, model=None, tokenizer=None):
         cfg[cfg['tag']]['optimizer']['num_steps'] = cfg['num_steps']
     if cfg['model_name'] in ['ridge', 'ann', 'svm', 'rf', 'gb', 'gp', 'dt']:
         cfg['num_steps'] = None
-
-    # if cfg['data_mode'] == 'semantic': # TODO: to disk may not be a good idea, make it transform maybe better?
-    #     class Compose(object):
-    #         def __init__(self, transforms):
-    #             self.transforms = transforms
-    #
-    #         def __call__(self, input):
-    #             for t in self.transforms:
-    #                 input = t(input)
-    #             return input
-    #
-    #     def tokenize_transform(tokenizer, max_length):
-    #         def transform(example):
-    #             data = example['data'] + example['target']
-    #             data = [element for tup in data for element in tup]
-    #             data = tokenizer(
-    #                 data,
-    #                 return_tensors="pt",
-    #                 padding='max_length',
-    #                 max_length=max_length,
-    #                 truncation=True,
-    #             )
-    #             if 'token_type_ids' in data:
-    #                 del data['token_type_ids']
-    #             data['target_semantic'] = example['target'][0][1]
-    #             if 'classes_to_labels' in dataset['train'].meta:
-    #                 data['target_numeric'] = torch.tensor(dataset['train'].meta['classes_to_labels'] \
-    #                                                           [data['target_semantic']], dtype=torch.long)
-    #             else:
-    #                 data['target_numeric'] = torch.tensor(float(data['target_semantic']), dtype=torch.float32)
-    #                 # perform pad when multiple datasets using data_size
-    #             return data
-    #
-    #         return transform
-    #
-    #     if 'classes_to_labels' in dataset['train'].meta:
-    #         classes_to_labels = copy.deepcopy(dataset['train'].meta['classes_to_labels'])
-    #         for key in dataset['train'].meta['classes_to_labels']:
-    #             if key.lower() not in classes_to_labels:
-    #                 classes_to_labels[key.lower()] = dataset['train'].meta['classes_to_labels'][key]
-    #         cfg['model']['classes_to_labels'] = classes_to_labels
-    #         if model is not None:
-    #             model.classes_to_labels = classes_to_labels
-    #     if tokenizer is not None:
-    #         for k in processed_dataset:
-    #             processed_dataset[k].transform = Compose(
-    #                 [tokenize_transform(tokenizer, cfg['model']['max_length'])])
     return processed_dataset
 
 

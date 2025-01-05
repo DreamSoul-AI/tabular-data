@@ -13,18 +13,16 @@ class TabLLM(Dataset):
     data_name = 'TabLLM'
     raw_data_name = 'tabllm'
 
-    def __init__(self, root, data_mode, process=False, transform=None):
+    def __init__(self, root, process=False, transform=None):
         self.root = os.path.expanduser(root)
-        self.data_mode = data_mode
         self.transform = transform
         if not check_exists(self.processed_folder) or process:
             self.process(process)
-        self.data = {}
-        self.target = {}
         self.meta = {}
         self.id, self.numeric_data, self.target = load(os.path.join(self.processed_folder, 'numeric', 'data'))
         _, self.semantic_data, _ = load(os.path.join(self.processed_folder, 'semantic', 'data'))
-        self.meta = load(os.path.join(self.processed_folder, self.data_mode, 'meta'))
+        self.meta['numeric'] = load(os.path.join(self.processed_folder, 'numeric', 'meta'))
+        self.meta['semantic'] = load(os.path.join(self.processed_folder, 'semantic', 'meta'))
         if os.path.exists(os.path.join(self.processed_folder, '{}.txt'.format(self.data_name))):
             with open(os.path.join(self.processed_folder, '{}.txt'.format(self.data_name)), 'r') as file:
                 self.description = file.read()
@@ -34,9 +32,8 @@ class TabLLM(Dataset):
     def __getitem__(self, index):
         input = {'id': torch.tensor(self.id[index]),
                  'numeric_data': torch.tensor(self.numeric_data[index]),
-                 'semantic_data': torch.tensor(self.semantic_data[index]),
-                 'target': self.target[index],
-                 'description': self.description}
+                 'semantic_data': self.semantic_data[index],
+                 'target': self.target[index]}
         if self.transform is not None:
             input = self.transform(input)
         return input
@@ -70,7 +67,7 @@ class TabLLM(Dataset):
         return
 
     def __repr__(self):
-        return f'Dataset {self.__class__.__name__}\nSize: {self.__len__()}\nRoot: {self.root}\nData mode: {self.data_mode}'
+        return f'Dataset {self.__class__.__name__}\nSize: {self.__len__()}\nRoot: {self.root}'
 
     def make_numeric_data(self):
         raise NotImplementedError
@@ -129,7 +126,7 @@ class Bank(TabLLM):
         max_length = cfg['model']['max_length']
         seq_length = 2 * (len(self.feature_names) + len(self.target_names))
 
-        # def transform(data_):
+        # def transform(data_): # TODO:make this into transform
         #     testdata_ = [element for data_i_ in data_ for tup in data_i_ for element in tup]
         #     data_ = tokenizer(testdata_, return_tensors="pt", padding='max_length',
         #                       max_length=max_length, truncation=True)
