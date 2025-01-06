@@ -6,6 +6,7 @@ import torch
 from sklearn.model_selection import train_test_split, KFold, LeaveOneOut
 from torch.utils.data import DataLoader
 from torch.utils.data.dataloader import default_collate
+from collections.abc import Iterable, Mapping
 from config import cfg
 
 
@@ -52,7 +53,7 @@ def make_dataset(data_name, eval_mode=None, process=False, verbose=True):
 def input_collate(input):
     first = input[0]
     batch = {}
-    for k, v in first.items():
+    for k, v in first.items(): # TODO: Need to improve
         if v is not None:
             if isinstance(v, torch.Tensor):
                 batch[k] = torch.stack([f[k] for f in input])
@@ -62,7 +63,10 @@ def input_collate(input):
                 batch[k] = [f[k] for f in input]
             elif isinstance(v, list):
                 batch[k] = [f[k] for f in input]
+            elif isinstance(input, Mapping):
+                pass
             else:
+                print(k)
                 batch[k] = torch.tensor([f[k] for f in input])
     return batch
 

@@ -3,6 +3,7 @@ import torch
 import pandas as pd
 import numpy as np
 from scipy.io import arff
+from transformers import AutoTokenizer
 from sklearn.preprocessing import LabelEncoder
 from torch.utils.data import Dataset
 from module import check_exists, makedir_exist_ok, save, load
@@ -12,6 +13,8 @@ from config import cfg
 class TabLLM(Dataset):
     data_name = 'TabLLM'
     raw_data_name = 'tabllm'
+    feature_names = []
+    target_names = []
 
     def __init__(self, root, process=False, transform=None):
         self.root = os.path.expanduser(root)
@@ -28,11 +31,22 @@ class TabLLM(Dataset):
                 self.description = file.read()
         else:
             self.description = None
+        self.encoder_model_name = 'intfloat/multilingual-e5-large-instruct'
+        cache_dir = os.path.join('output', 'cache')
+        cache_tokenizer_path = os.path.join(cache_dir, self.encoder_model_name, 'tokenizer')
+        if not os.path.exists(os.path.join(cache_dir, self.encoder_model_name)):
+            local_files_only = False
+        else:
+            local_files_only = True
+        self.tokenizer = AutoTokenizer.from_pretrained(self.encoder_model_name, trust_remote_code=True,
+                                                       cache_dir=cache_tokenizer_path,
+                                                       local_files_only=local_files_only)
 
     def __getitem__(self, index):
+        semantic_data = self.transform_semantic_data(self.semantic_data[index])
         input = {'id': torch.tensor(self.id[index]),
                  'numeric_data': torch.tensor(self.numeric_data[index]),
-                 'semantic_data': self.semantic_data[index],
+                 'semantic_data': semantic_data,
                  'target': self.target[index]}
         if self.transform is not None:
             input = self.transform(input)
@@ -75,8 +89,16 @@ class TabLLM(Dataset):
     def make_semantic_data(self):
         raise NotImplementedError
 
-    def make_encoder_embedding_data(self):
-        raise NotImplementedError
+    def transform_semantic_data(self, data):
+        max_length = cfg['model']['max_length']
+        seq_length = 2 * (len(self.feature_names) + len(self.target_names))
+
+        data = [element for tup in data for element in tup]
+        data = self.tokenizer(data, return_tensors="pt", padding='max_length',
+                              max_length=max_length, truncation=True)
+        data['input_ids'] = data['input_ids'].view(-1, seq_length, max_length)
+        data['attention_mask'] = data['attention_mask'].view(-1, seq_length, max_length)
+        return data
 
 
 class Bank(TabLLM):
@@ -88,7 +110,6 @@ class Bank(TabLLM):
     feature_names = ['age', 'job', 'marital', 'education', 'default', 'balance', 'housing', 'loan', 'contact', 'day',
                      'month', 'duration', 'campaign', 'pdays', 'previous', 'poutcome']
     target_names = ['deposit']
-    encoder_model_name = 'intfloat/multilingual-e5-large-instruct'
 
     def make_data(self):
         columns = {'V' + str(i + 1): v for i, v in enumerate(self.feature_names)}
@@ -122,46 +143,12 @@ class Bank(TabLLM):
         return data_set, meta
 
     def make_semantic_data(self):
-        from transformers import AutoTokenizer
-        max_length = cfg['model']['max_length']
-        seq_length = 2 * (len(self.feature_names) + len(self.target_names))
-
-        # def transform(data_): # TODO:make this into transform
-        #     testdata_ = [element for data_i_ in data_ for tup in data_i_ for element in tup]
-        #     data_ = tokenizer(testdata_, return_tensors="pt", padding='max_length',
-        #                       max_length=max_length, truncation=True)
-        #     data_['input_ids'] = data_['input_ids'].view(-1, seq_length, max_length)
-        #     data_['attention_mask'] = data_['attention_mask'].view(-1, seq_length, max_length)
-        #     return data_
-
         dataset = self.make_data()
         dataset = dataset.astype(str)
         data = dataset.apply(convert_to_semantic, axis=1)
-
-        # cache_dir = os.path.join('output', 'cache')
-        # cache_tokenizer_path = os.path.join(cache_dir, self.encoder_model_name, 'tokenizer')
-        # if not os.path.exists(os.path.join(cache_dir, self.encoder_model_name)):
-        #     local_files_only = False
-        # else:
-        #     local_files_only = True
-        # tokenizer = AutoTokenizer.from_pretrained(self.encoder_model_name, trust_remote_code=True,
-        #                                           cache_dir=cache_tokenizer_path, local_files_only=local_files_only)
-        # batch_size = 1000
-        # data = {'input_ids': [], 'attention_mask': []}
-        # for i in range(0, len(dataset), batch_size):
-        #     data_i = dataset[i:i + batch_size]
-        #     data_i = transform(data_i)
-        #     data['input_ids'].append(data_i['input_ids'])
-        #     data['attention_mask'].append(data_i['attention_mask'])
-        # data['input_ids'] = torch.cat(data['input_ids'], dim=0)
-        # data['attention_mask'] = torch.cat(data['attention_mask'], dim=0)
-
         id = np.arange(len(data)).astype(np.int64)
         data_set = (id, data, None)
         meta = {}
-
-        # data_size = list(data['input_ids'].shape[1:])
-        # meta = {'data_size': data_size}
         return data_set, meta
 
 
