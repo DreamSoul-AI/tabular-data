@@ -6,7 +6,7 @@ import torch
 from sklearn.model_selection import train_test_split, KFold, LeaveOneOut
 from torch.utils.data import DataLoader
 from torch.utils.data.dataloader import default_collate
-from collections.abc import Iterable, Mapping
+from module import apply_recursively
 from config import cfg
 
 
@@ -53,7 +53,7 @@ def make_dataset(data_name, eval_mode=None, process=False, verbose=True):
 def input_collate(input):
     first = input[0]
     batch = {}
-    for k, v in first.items(): # TODO: Need to improve
+    for k, v in first.items():
         if v is not None:
             if isinstance(v, torch.Tensor):
                 batch[k] = torch.stack([f[k] for f in input])
@@ -63,10 +63,7 @@ def input_collate(input):
                 batch[k] = [f[k] for f in input]
             elif isinstance(v, list):
                 batch[k] = [f[k] for f in input]
-            elif isinstance(input, Mapping):
-                pass
             else:
-                print(k)
                 batch[k] = torch.tensor([f[k] for f in input])
     return batch
 
@@ -132,7 +129,7 @@ def process_dataset(dataset, model=None, tokenizer=None):
 def split_dataset(dataset, idx):
     dataset_ = copy.deepcopy(dataset)
     dataset_.id = [dataset.id[s] for s in idx]
-    dataset_.data = [dataset.numeric_data[s] for s in idx]
-    dataset_.data = [dataset.semantic_data[s] for s in idx]
+    dataset_.data = [dataset.numeric[s] for s in idx]
+    dataset_.data = [dataset.semantic[s] for s in idx]
     dataset_.target = [dataset.target[s] for s in idx]
     return dataset_

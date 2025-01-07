@@ -22,8 +22,8 @@ class TabLLM(Dataset):
         if not check_exists(self.processed_folder) or process:
             self.process(process)
         self.meta = {}
-        self.id, self.numeric_data, self.target = load(os.path.join(self.processed_folder, 'numeric', 'data'))
-        _, self.semantic_data, _ = load(os.path.join(self.processed_folder, 'semantic', 'data'))
+        self.id, self.numeric, self.target = load(os.path.join(self.processed_folder, 'numeric', 'data'))
+        _, self.semantic, _ = load(os.path.join(self.processed_folder, 'semantic', 'data'))
         self.meta['numeric'] = load(os.path.join(self.processed_folder, 'numeric', 'meta'))
         self.meta['semantic'] = load(os.path.join(self.processed_folder, 'semantic', 'meta'))
         if os.path.exists(os.path.join(self.processed_folder, '{}.txt'.format(self.data_name))):
@@ -43,11 +43,12 @@ class TabLLM(Dataset):
                                                        local_files_only=local_files_only)
 
     def __getitem__(self, index):
-        semantic_data = self.transform_semantic_data(self.semantic_data[index])
+        semantic = self.transform_semantic_data(self.semantic[index])
         input = {'id': torch.tensor(self.id[index]),
-                 'numeric_data': torch.tensor(self.numeric_data[index]),
-                 'semantic_data': semantic_data,
-                 'target': self.target[index]}
+                 'numeric-data': torch.tensor(self.numeric[index]),
+                 'numeric-target': torch.tensor(self.target[index]),
+                 'semantic-input_ids': semantic['input_ids'],
+                 'semantic-attention_mask': semantic['attention_mask']}
         if self.transform is not None:
             input = self.transform(input)
         return input
