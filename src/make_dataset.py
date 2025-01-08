@@ -62,7 +62,6 @@ if __name__ == "__main__":
                     if cfg['model']['task_mode'] == 'regression':
                         stats_i['numeric-target'] = Stats(dim=1)
                     for i, input in enumerate(data_loader['train']):
-                        print(i)
                         stats_i['numeric-data'].update(input['numeric-data'])
                         if cfg['model']['task_mode'] == 'regression':
                             stats_i['numeric-target'].update(input['numeric-target'])

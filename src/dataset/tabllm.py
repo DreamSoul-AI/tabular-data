@@ -94,7 +94,6 @@ class TabLLM(Dataset):
         max_length = cfg['model']['max_length']
         seq_length = 2 * (len(self.feature_names) + len(self.target_names))
 
-        data = [element for tup in data for element in tup]
         data = self.tokenizer(data, return_tensors="pt", padding='max_length',
                               max_length=max_length, truncation=True)
         data['input_ids'] = data['input_ids'].view(-1, seq_length, max_length)
@@ -147,6 +146,8 @@ class Bank(TabLLM):
         dataset = self.make_data()
         dataset = dataset.astype(str)
         data = dataset.apply(convert_to_semantic, axis=1)
+        # data = [element for tup in data for element in tup]
+
         id = np.arange(len(data)).astype(np.int64)
         data_set = (id, data, None)
         meta = {}
@@ -444,4 +445,7 @@ def byte_to_string_columns(data):
 
 
 def convert_to_semantic(row):
-    return [(col, value) for col, value in row.items()]
+    data = []
+    for col, value in row.items():
+        data.extend([col, value])
+    return data
