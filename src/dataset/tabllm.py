@@ -146,8 +146,6 @@ class Bank(TabLLM):
         dataset = self.make_data()
         dataset = dataset.astype(str)
         data = dataset.apply(convert_to_semantic, axis=1)
-        # data = [element for tup in data for element in tup]
-
         id = np.arange(len(data)).astype(np.int64)
         data_set = (id, data, None)
         meta = {}

@@ -2,7 +2,7 @@ from .model import *
 from .loss import *
 from .linear import *
 from .mlp import *
-from .base import *
+from .numeric import *
 from .sk import *
 from .kan import *
 from .bert import *

@@ -9,7 +9,7 @@ from transformers import get_linear_schedule_with_warmup
 def make_model(cfg, index):
     if cfg['model_name'] in ['linear', 'mlp', 'kan']:
         core = eval('model.{}(cfg)'.format(cfg['model_name']))
-        base = model.base(core, cfg, index)
+        base = model.numeric(core, cfg, index)
     elif cfg['model_name'] in ['ridge', 'ann', 'svm', 'rf', 'gb', 'gp', 'dt']:
         base = model.sk(cfg, index)
     elif cfg['model_name'] in ['bert']:

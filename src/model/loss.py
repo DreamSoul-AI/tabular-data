@@ -2,11 +2,8 @@ import torch
 import torch.nn.functional as F
 
 
-def make_loss(output, input, **args):
-    if 'target' in input:
-        loss = loss_fn(output['pred'], input['target'], **args)
-    else:
-        return
+def make_loss(output, target, **args):
+    loss = loss_fn(output, target, **args)
     return loss
 
 
