@@ -10,7 +10,7 @@ from config import cfg, process_args
 from dataset import make_dataset, make_data_loader, process_dataset
 from metric import make_logger
 from model import make_model, make_optimizer, make_scheduler
-from module import check, resume, to_device, process_control
+from module import check, resume, to_device, process_control, process_input
 
 cudnn.benchmark = True
 parser = argparse.ArgumentParser(description='cfg')
@@ -110,6 +110,10 @@ def train(data_loader, model, optimizer, scheduler, logger, index, verbose=False
             if i % cfg['step_period'] == 0 and cfg['profile']:
                 logger.profiler.step()
             input_size = len(input[list(input.keys())[0]])
+            print(input)
+            input = process_input(input) # TODO: attempt a recursive collator instead
+            print(input)
+            exit()
             input = to_device(input, cfg['device'])
             output = model(input)
             loss = 1 / cfg['step_period'] * output['loss']
@@ -166,6 +170,9 @@ def test(data_loader, model, logger, index, mode=None, verbose=False):
             print(logger.write('test'))
         logger.save(True)
     return
+
+
+
 
 
 if __name__ == "__main__":

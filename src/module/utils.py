@@ -1,5 +1,6 @@
 import inspect
 import torch
+from collections import defaultdict
 from collections.abc import Iterable, Mapping
 from itertools import repeat
 
@@ -53,3 +54,19 @@ def gather_input(data_loader):
     for key in input:
         input[key] = torch.cat(input[key], dim=0)
     return input
+
+
+def tree():
+    return defaultdict(tree)
+
+
+def process_input(input):
+    processed_input = tree()
+    for key in input:
+        split_names = key.split('-')
+        current = processed_input
+        for split_name in split_names[:-1]:
+            current = current[split_name]
+        current[split_names[-1]] = input[key]
+    processed_input = dict(processed_input)
+    return processed_input
