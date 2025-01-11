@@ -44,11 +44,13 @@ class TabLLM(Dataset):
 
     def __getitem__(self, index):
         semantic = self.transform_semantic_data(self.semantic[index])
+        # print(semantic['input_ids'].size(), semantic['attention_mask'].size())
+        # exit()
         input = {'id': torch.tensor(self.id[index]),
-                 'numeric-data': torch.tensor(self.numeric[index]),
-                 'numeric-target': torch.tensor(self.target[index]),
-                 'semantic-input_ids': semantic['input_ids'],
-                 'semantic-attention_mask': semantic['attention_mask']}
+                 'numeric': {'data': torch.tensor(self.numeric[index]),
+                             'target': torch.tensor(self.target[index])},
+                 'semantic': {'input_ids': semantic['input_ids'],
+                              'attention_mask': semantic['attention_mask']}}
         if self.transform is not None:
             input = self.transform(input)
         return input
@@ -92,12 +94,12 @@ class TabLLM(Dataset):
 
     def transform_semantic_data(self, data):
         max_length = cfg['model']['max_length']
-        seq_length = 2 * (len(self.feature_names) + len(self.target_names))
+        # seq_length = 2 * (len(self.feature_names) + len(self.target_names))
 
         data = self.tokenizer(data, return_tensors="pt", padding='max_length',
                               max_length=max_length, truncation=True)
-        data['input_ids'] = data['input_ids'].view(-1, seq_length, max_length)
-        data['attention_mask'] = data['attention_mask'].view(-1, seq_length, max_length)
+        # data['input_ids'] = data['input_ids'].view(-1, seq_length, max_length)
+        # data['attention_mask'] = data['attention_mask'].view(-1, seq_length, max_length)
         return data
 
 

@@ -20,17 +20,23 @@ def ntuple(n):
     return parse
 
 
-def apply_recursively(fn, input, *args, apply_condition, identity_condition=None):
+def apply_recursively(fn, input, *args, apply_condition, identity_condition=None, key='root'):
     if apply_condition(input):
-        return fn(input, *args)
+        sig = inspect.signature(fn)
+        if 'key' in sig.parameters:
+            return fn(input, *args, key=key)
+        else:
+            return fn(input, *args)
     elif identity_condition is not None and identity_condition(input):
         return input
     elif isinstance(input, Mapping):
         return {key: apply_recursively(fn, value, *args, apply_condition=apply_condition,
-                                       identity_condition=identity_condition) for key, value in input.items()}
+                                       identity_condition=identity_condition, key='{},{}'.format(key, key_)) for
+                key_, value in input.items()}
     elif isinstance(input, Iterable) and not isinstance(input, (str, bytes)):
         return [apply_recursively(fn, item, *args, apply_condition=apply_condition,
-                                  identity_condition=identity_condition) for item in input]
+                                  identity_condition=identity_condition, key='{},{}'.format(key, i))
+                for i, item in enumerate(input)]
     else:
         raise ValueError('Not valid input type: {} with value {}'.format(type(input), input))
 
