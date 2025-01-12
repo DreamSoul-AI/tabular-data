@@ -6,7 +6,7 @@ import torch
 from sklearn.model_selection import train_test_split, KFold, LeaveOneOut
 from torch.utils.data import DataLoader
 from torch.utils.data.dataloader import default_collate
-from module import apply_recursively, tree
+from module import apply_recursively
 from config import cfg
 
 
@@ -52,8 +52,6 @@ def make_dataset(data_name, eval_mode=None, process=False, verbose=True):
 
 def input_collate(input):
     def add_(input_, key=None):
-        # print(input_)
-        # print(key)
         split_names = key.split(',')
         current = batch
         for split_name in split_names[:-1]:
@@ -66,34 +64,12 @@ def input_collate(input):
             current[split_names[-1]] = torch.cat([current[split_names[-1]], input_.unsqueeze(0)], dim=0)
         return
 
-    first = input[0]
     batch = {}
     apply_condition = lambda x: isinstance(x, torch.Tensor)
     identity_condition = lambda x: isinstance(x, (str, type(None)))
     for i in range(len(input)):
         input_i = input[i]
         apply_recursively(add_, input_i, apply_condition=apply_condition, identity_condition=identity_condition)
-    # batch = dict(batch) # TODO convert all to dict
-    batch = batch['root']
-    print(batch)
-    print(batch['numeric']['data'].size())
-    print(batch['semantic']['input_ids'].size())
-    print(batch)
-    exit()
-
-    batch = {}
-    for k, v in first.items():
-        if v is not None:
-            if isinstance(v, torch.Tensor):
-                batch[k] = torch.stack([f[k] for f in input])
-            elif isinstance(v, np.ndarray):
-                batch[k] = torch.tensor(np.stack([f[k] for f in input]))
-            elif isinstance(v, str):
-                batch[k] = [f[k] for f in input]
-            elif isinstance(v, list):
-                batch[k] = [f[k] for f in input]
-            else:
-                batch[k] = torch.tensor([f[k] for f in input])
     return batch
 
 

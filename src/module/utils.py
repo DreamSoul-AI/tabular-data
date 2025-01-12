@@ -20,25 +20,37 @@ def ntuple(n):
     return parse
 
 
-def apply_recursively(fn, input, *args, apply_condition, identity_condition=None, key='root'):
+def apply_recursively(fn, input, *args, apply_condition, identity_condition=None, key=None):
     if apply_condition(input):
         sig = inspect.signature(fn)
         if 'key' in sig.parameters:
-            return fn(input, *args, key=key)
+            result = fn(input, *args, key=key)
         else:
-            return fn(input, *args)
+            result = fn(input, *args)
     elif identity_condition is not None and identity_condition(input):
-        return input
+        result = input
     elif isinstance(input, Mapping):
-        return {key: apply_recursively(fn, value, *args, apply_condition=apply_condition,
-                                       identity_condition=identity_condition, key='{},{}'.format(key, key_)) for
-                key_, value in input.items()}
+        # return {key: apply_recursively(fn, value, *args, apply_condition=apply_condition,
+        #                                identity_condition=identity_condition, key='{},{}'.format(key, key_)) for
+        #         key_, value in input.items()}
+        result = {}
+        for key_, value_ in input.items():
+            updated_key = key_ if key is None else '{},{}'.format(key, key_)
+            result[key_] = apply_recursively(fn, value_, *args, apply_condition=apply_condition,
+                                             identity_condition=identity_condition, key=updated_key)
     elif isinstance(input, Iterable) and not isinstance(input, (str, bytes)):
-        return [apply_recursively(fn, item, *args, apply_condition=apply_condition,
-                                  identity_condition=identity_condition, key='{},{}'.format(key, i))
-                for i, item in enumerate(input)]
+        #     return [apply_recursively(fn, item, *args, apply_condition=apply_condition,
+        #                               identity_condition=identity_condition, key='{},{}'.format(key, i))
+        #             for i, item in enumerate(input)]
+        result = []
+        for i, item in enumerate(input):
+            updated_key = i if key is None else '{},{}'.format(key, i)
+            result_i = apply_recursively(fn, item, *args, apply_condition=apply_condition,
+                                         identity_condition=identity_condition, key=updated_key)
+            result.append(result_i)
     else:
         raise ValueError('Not valid input type: {} with value {}'.format(type(input), input))
+    return result
 
 
 def to_device(input, device):
@@ -64,15 +76,3 @@ def gather_input(data_loader):
 
 def tree():
     return defaultdict(tree)
-
-
-def process_input(input):
-    processed_input = tree()
-    for key in input:
-        split_names = key.split('-')
-        current = processed_input
-        for split_name in split_names[:-1]:
-            current = current[split_name]
-        current[split_names[-1]] = input[key]
-    processed_input = dict(processed_input)
-    return processed_input

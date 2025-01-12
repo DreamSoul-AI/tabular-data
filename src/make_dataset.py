@@ -58,23 +58,23 @@ if __name__ == "__main__":
                     cfg['step'] = 0
                     data_loader = make_data_loader(dataset_i, cfg[cfg['tag']]['optimizer']['batch_size'],
                                                    shuffle=False)
-                    stats_i = {'numeric-data': Stats(dim=dim)}
+                    stats_i = {'numeric': {'data': Stats(dim=dim)}}
                     if cfg['model']['task_mode'] == 'regression':
-                        stats_i['numeric-target'] = Stats(dim=1)
+                        stats_i['numeric']['target'] = Stats(dim=1)
                     for i, input in enumerate(data_loader['train']):
-                        stats_i['numeric-data'].update(input['numeric-data'])
+                        stats_i['numeric']['data'].update(input['numeric']['data'])
                         if cfg['model']['task_mode'] == 'regression':
-                            stats_i['numeric-target'].update(input['numeric-target'])
+                            stats_i['numeric']['target'].update(input['numeric']['target'])
                     stats.append(stats_i)
                     if cfg['model']['task_mode'] == 'regression':
                         print('Name: {}({})\nData:\n{}\nTarget:\n{}'.format(cfg['control']['data_name'],
                                                                             cfg['control']['data_mode'],
-                                                                            stats_i['numeric-data'],
-                                                                            stats_i['numeric-target']))
+                                                                            stats_i['numeric']['data'],
+                                                                            stats_i['numeric']['target']))
                     else:
                         print('Name: {}({})\nData:\n{}'.format(cfg['control']['data_name'],
                                                                cfg['control']['data_mode'],
-                                                               stats_i['numeric-data']))
+                                                               stats_i['numeric']['data']))
                 makedir_exist_ok(stats_path)
                 save(stats, os.path.join(stats_path, '{}_{}'.format(data_name, eval_mode)), 'torch')
     copy_dataset_description()

@@ -44,8 +44,6 @@ class TabLLM(Dataset):
 
     def __getitem__(self, index):
         semantic = self.transform_semantic_data(self.semantic[index])
-        # print(semantic['input_ids'].size(), semantic['attention_mask'].size())
-        # exit()
         input = {'id': torch.tensor(self.id[index]),
                  'numeric': {'data': torch.tensor(self.numeric[index]),
                              'target': torch.tensor(self.target[index])},
