@@ -52,7 +52,7 @@ def make_dataset(data_name, eval_mode=None, process=False, verbose=True):
 
 def input_collate(input):
     def add_(input_, key=None):
-        split_names = key.split(',')
+        split_names = key.split('.')
         current = batch
         for split_name in split_names[:-1]:
             if split_name not in current:
