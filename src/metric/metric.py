@@ -192,13 +192,13 @@ class Metric:
                     mode_keys[split][metric_name_i]['output'].add('loss')
                 elif metric_name_i in ['Accuracy', 'MSE', 'MAE', 'MBE', 'MPE']:
                     mode[split][metric_name_i] = 'batch'
-                    mode_keys[split][metric_name_i]['input'].add('numeric-target') # TODO: need to refactor the name
-                    mode_keys[split][metric_name_i]['output'].add('numeric-pred')
+                    mode_keys[split][metric_name_i]['input'].add('target')
+                    mode_keys[split][metric_name_i]['output'].add('pred')
                 elif metric_name_i in ['RMSE', 'R2', 'Correlation', 'ResidualMean', 'ResidualStd', 'ResidualSkewness',
                                        'ResidualKurtosis', 'AUC']:
                     mode[split][metric_name_i] = 'full'
-                    mode_keys[split][metric_name_i]['input'].add('numeric-target')
-                    mode_keys[split][metric_name_i]['output'].add('numeric-pred')
+                    mode_keys[split][metric_name_i]['input'].add('target')
+                    mode_keys[split][metric_name_i]['output'].add('pred')
                 else:
                     raise ValueError('Not valid metric name')
         return metric, mode, mode_keys

@@ -14,37 +14,39 @@ class Numeric(nn.Module):
         self.model_name = cfg['model_name']
         self.task_mode = cfg['task_mode']
         self.stats = cfg['stats']
-        self.register_buffer('data_mean', self.stats[index]['numeric-data'].mean)
-        self.register_buffer('data_std', self.stats[index]['numeric-data'].std)
+        self.register_buffer('data_mean', self.stats[index]['numeric']['data'].mean)
+        self.register_buffer('data_std', self.stats[index]['numeric']['data'].std)
         if self.task_mode == 'regression':
-            self.register_buffer('target_mean', self.stats[index]['numeric-target'].mean)
-            self.register_buffer('target_std', self.stats[index]['numeric-target'].mean)
+            self.register_buffer('target_mean', self.stats[index]['numeric']['target'].mean)
+            self.register_buffer('target_std', self.stats[index]['numeric']['target'].mean)
 
     def forward(self, input):
         output = {}
-        x = self.normalize_input(input)
+        x = self.make_input(input)
         x = self.core(x)
-        output['numeric-pred'] = x
-        if 'numeric-target' in input:
-            output['loss'] = make_loss(output['numeric-pred'], input['numeric-target'], mode=self.task_mode,
-                                       log_prob=False)
-        self.normalize_output(input, output)
+        output['pred'] = x
+        if 'target' in input:
+            output['loss'] = make_loss(output['pred'], input['target'], mode=self.task_mode)
+        self.make_output(input, output)
         return output
 
-    def normalize_input(self, input):
-        x = input['numeric-data']
+    def make_input(self, input):
+        x = input['numeric']['data']
         x = normalize(x, 1 / self.data_std, -self.data_mean / self.data_std)
+        if 'target' in input['numeric']:
+            input['target'] = input['numeric']['target']
+
         if self.task_mode == 'regression':
-            if 'numeric-target' in input:
-                input['numeric-target'] = normalize(input['numeric-target'], 1 / self.target_std,
-                                                    -self.target_mean / self.target_std)
+            if 'target' in input['numeric']:
+                input['target'] = normalize(input['target'], 1 / self.target_std,
+                                            -self.target_mean / self.target_std)
         return x
 
-    def normalize_output(self, input, output):
+    def make_output(self, input, output):
         if self.task_mode == 'regression':
-            output['numeric-pred'] = normalize(output['numeric-pred'], self.target_std, self.target_mean)
-            if 'numeric-target' in input:
-                input['numeric-target'] = normalize(input['numeric-target'], self.target_std, self.target_mean)
+            output['pred'] = normalize(output['pred'], self.target_std, self.target_mean)
+            if 'target' in input:
+                input['target'] = normalize(input['target'], self.target_std, self.target_mean)
         return
 
 

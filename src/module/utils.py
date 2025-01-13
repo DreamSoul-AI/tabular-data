@@ -30,18 +30,12 @@ def apply_recursively(fn, input, *args, apply_condition, identity_condition=None
     elif identity_condition is not None and identity_condition(input):
         result = input
     elif isinstance(input, Mapping):
-        # return {key: apply_recursively(fn, value, *args, apply_condition=apply_condition,
-        #                                identity_condition=identity_condition, key='{},{}'.format(key, key_)) for
-        #         key_, value in input.items()}
         result = {}
         for key_, value_ in input.items():
             updated_key = key_ if key is None else '{},{}'.format(key, key_)
             result[key_] = apply_recursively(fn, value_, *args, apply_condition=apply_condition,
                                              identity_condition=identity_condition, key=updated_key)
     elif isinstance(input, Iterable) and not isinstance(input, (str, bytes)):
-        #     return [apply_recursively(fn, item, *args, apply_condition=apply_condition,
-        #                               identity_condition=identity_condition, key='{},{}'.format(key, i))
-        #             for i, item in enumerate(input)]
         result = []
         for i, item in enumerate(input):
             updated_key = i if key is None else '{},{}'.format(key, i)
