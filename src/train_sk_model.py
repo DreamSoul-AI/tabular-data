@@ -7,7 +7,7 @@ from config import cfg, process_args
 from dataset import make_dataset, make_data_loader, process_dataset
 from metric import make_logger
 from model import make_model
-from module import check, resume, process_control, gather_input
+from module import check, resume, process_control
 
 cudnn.benchmark = True
 parser = argparse.ArgumentParser(description='cfg')
@@ -77,15 +77,15 @@ def runExperiment():
 
 
 def train(data_loader, model, logger, index):
-    input = {}
+    input = {'numeric': {}}
     for i, input_i in enumerate(data_loader):
-        for key, value in input_i.items():
-            if key not in input:
-                input[key] = []
-            input[key].append(value)
-    for key in input:
-        input[key] = torch.cat(input[key], dim=0)
-    input_size = input['data'].size(0)
+        for key, value in input_i['numeric'].items():
+            if key not in input['numeric']:
+                input['numeric'][key] = []
+            input['numeric'][key].append(value)
+    for key in input['numeric']:
+        input['numeric'][key] = torch.cat(input['numeric'][key], dim=0)
+    input_size = len(input['numeric']['data'])
     output = model.fit(input)
     evaluation = logger.evaluate('train', 'batch', input, output)
     logger.append(evaluation, 'train', n=input_size)
@@ -96,8 +96,15 @@ def train(data_loader, model, logger, index):
 
 
 def test(data_loader, model, logger, index, mode=None, verbose=False):
-    input = gather_input(data_loader)
-    input_size = input['data'].size(0)
+    input = {'numeric': {}}
+    for i, input_i in enumerate(data_loader):
+        for key, value in input_i['numeric'].items():
+            if key not in input['numeric']:
+                input['numeric'][key] = []
+            input['numeric'][key].append(value)
+    for key in input['numeric']:
+        input['numeric'][key] = torch.cat(input['numeric'][key], dim=0)
+    input_size = len(input['numeric']['data'])
     output = model.predict(input)
     if mode is None or mode == 'batch':
         evaluation = logger.evaluate('test', 'batch', input, output)

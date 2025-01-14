@@ -35,7 +35,6 @@ class Numeric(nn.Module):
         x = normalize(x, 1 / self.data_std, -self.data_mean / self.data_std)
         if 'target' in input['numeric']:
             input['target'] = input['numeric']['target']
-
         if self.task_mode == 'regression':
             if 'target' in input['numeric']:
                 input['target'] = normalize(input['target'], 1 / self.target_std,

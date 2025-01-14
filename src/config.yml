@@ -4,7 +4,7 @@ control:
   data_name: Bank
   data_mode: numeric
   eval_mode: 0.9-holdout
-  model_name: linear # TODO: test sk model for numeric
+  model_name: linear
   num_shots: -1
 # experiment
 pin_memory: True

@@ -6,7 +6,7 @@ from config import cfg, process_args
 from dataset import make_dataset, make_data_loader, process_dataset
 from metric import make_logger
 from model import make_model
-from module import save, resume, process_control, gather_input, make_shap, viz_shap
+from module import save, resume, process_control
 
 cudnn.benchmark = True
 parser = argparse.ArgumentParser(description='cfg')
@@ -45,16 +45,13 @@ def runExperiment():
     cfg['step'] = result['cfg']['step']
     test_logger = make_logger(cfg['logger_path'], data_name=cfg['data_name'], run_mode=cfg['run_mode'])
     result_list = []
-    shap_list = []
     for i in range(len(dataset)):
         dataset_i = process_dataset(dataset[i])
         model_i = make_model(cfg['model'], i)
         model_i.load_state_dict(result['model'][i])
         data_loader = make_data_loader(dataset_i, cfg[cfg['tag']]['optimizer']['batch_size'])
-        result_i = test(data_loader['test'], model_i, test_logger)
-        shap_i = make_shap(data_loader, model_i, cfg['model']['model_name'])
+        result_i = test(data_loader['test'], model_i, test_logger, i, None, True)
         result_list.append(result_i)
-        shap_list.append(shap_i)
     evaluation = test_logger.evaluate('test', 'full')
     test_logger.append(evaluation, 'test')
     info = {'info': ['Model: {} (full)'.format(cfg['tag']), 'Test Epoch: 1(100%)']}
@@ -63,29 +60,34 @@ def runExperiment():
     test_logger.save(True)
     result = resume(cfg['checkpoint_path'])
     result = {'cfg': cfg, 'logger': {'train': result['logger'],
-                                     'test': test_logger.state_dict()}, 'result': result_list, 'shap': shap_list}
+                                     'test': test_logger.state_dict()}, 'result': result_list}
     save(result, cfg['result_path'])
-    if cfg['viz_condition']:
-        viz_shap(shap_list, cfg['viz_path'])
     return
 
 
-def test(data_loader, model, logger):
-    def gather_result(input, output):
-        result = {}
-        result['id'] = input['id'].detach().cpu().numpy()
-        result['pred'] = output['pred'].detach().cpu().numpy()
-        result['target'] = input['target'].detach().cpu().numpy()
-        return result
-
-    input = gather_input(data_loader)
-    input_size = input['data'].size(0)
+def test(data_loader, model, logger, index, mode=None, verbose=False):
+    input = {'numeric': {}}
+    for i, input_i in enumerate(data_loader):
+        for key, value in input_i['numeric'].items():
+            if key not in input['numeric']:
+                input['numeric'][key] = []
+            input['numeric'][key].append(value)
+    for key in input['numeric']:
+        input['numeric'][key] = torch.cat(input['numeric'][key], dim=0)
+    input_size = len(input['numeric']['data'])
     output = model.predict(input)
-    evaluation = logger.evaluate('test', 'batch', input, output)
-    logger.append(evaluation, 'test', input_size)
-    logger.add('test', input, output)
-    result = gather_result(input, output)
-    return result
+    if mode is None or mode == 'batch':
+        evaluation = logger.evaluate('test', 'batch', input, output)
+        logger.append(evaluation, 'test', input_size)
+    if mode is None or mode == 'full':
+        logger.add('test', input, output)
+    info = {'info': ['Model: {} ({})'.format(cfg['tag'], index),
+                     'Test Epoch: {}({:.0f}%)'.format(cfg['step'] // cfg['eval_period'], 100.)]}
+    logger.append(info, 'test')
+    if verbose:
+        print(logger.write('test'))
+    logger.save(True)
+    return
 
 
 if __name__ == "__main__":

@@ -6,7 +6,7 @@ from config import cfg, process_args
 from dataset import make_dataset, make_data_loader, process_dataset
 from metric import make_logger
 from model import make_model
-from module import save, resume, to_device, process_control, make_shap, viz_shap
+from module import save, resume, to_device, process_control
 
 cudnn.benchmark = True
 parser = argparse.ArgumentParser(description='cfg')
@@ -45,17 +45,14 @@ def runExperiment():
     cfg['step'] = result['cfg']['step']
     test_logger = make_logger(cfg['logger_path'], data_name=cfg['data_name'], run_mode=cfg['run_mode'])
     result_list = []
-    shap_list = []
     for i in range(len(dataset)):
         dataset_i = process_dataset(dataset[i])
         model_i = make_model(cfg['model'], i)
         model_i = model_i.to(cfg['device'])
         model_i.load_state_dict(result['model'][i])
         data_loader = make_data_loader(dataset_i, cfg[cfg['tag']]['optimizer']['batch_size'])
-        result_i = test(data_loader['test'], model_i, test_logger)
-        shap_i = make_shap(data_loader, model_i, cfg['model']['model_name'], cfg['device'])
+        result_i = test(data_loader['test'], model_i, test_logger, i, None, True)
         result_list.append(result_i)
-        shap_list.append(shap_i)
     evaluation = test_logger.evaluate('test', 'full')
     test_logger.append(evaluation, 'test')
     info = {'info': ['Model: {} (full)'.format(cfg['tag']),
@@ -65,35 +62,33 @@ def runExperiment():
     test_logger.save(True)
     result = resume(cfg['checkpoint_path'])
     result = {'cfg': cfg, 'logger': {'train': result['logger'],
-                                     'test': test_logger.state_dict()}, 'result': result_list, 'shap': shap_list}
+                                     'test': test_logger.state_dict()}, 'result': result_list}
     save(result, cfg['result_path'])
-    if cfg['viz_condition']:
-        viz_shap(shap_list, cfg['viz_path'])
     return
 
 
-def test(data_loader, model, logger):
-    def gather_result(input, output):
-        result['id'].append(input['id'])
-        result['pred'].append(output['pred'])
-        result['target'].append(input['target'])
-        return
-
+def test(data_loader, model, logger, index, mode=None, verbose=False):
     with torch.no_grad():
-        result = {'id': [], 'pred': [], 'target': []}
-
         model.train(False)
+        num_steps = len(data_loader) if cfg['eval']['num_steps'] == -1 else cfg['eval']['num_steps']
         for i, input in enumerate(data_loader):
-            input_size = input['data'].size(0)
+            input_size = len(input['numeric']['data'])
             input = to_device(input, cfg['device'])
             output = model(input)
-            evaluation = logger.evaluate('test', 'batch', input, output)
-            logger.append(evaluation, 'test', input_size)
-            logger.add('test', input, output)
-            gather_result(input, output)
-        for k in result:
-            result[k] = torch.cat(result[k], dim=0).detach().cpu().numpy()
-    return result
+            if mode is None or mode == 'batch':
+                evaluation = logger.evaluate('test', 'batch', input, output)
+                logger.append(evaluation, 'test', input_size)
+            if mode is None or mode == 'full':
+                logger.add('test', input, output)
+            if (i + 1) == num_steps:
+                break
+        info = {'info': ['Model: {} ({})'.format(cfg['tag'], index),
+                         'Test Epoch: {}({:.0f}%)'.format(cfg['step'] // cfg['eval_period'], 100.)]}
+        logger.append(info, 'test')
+        if verbose:
+            print(logger.write('test'))
+        logger.save(True)
+    return
 
 
 if __name__ == "__main__":

@@ -109,7 +109,7 @@ def train(data_loader, model, optimizer, scheduler, logger, index, verbose=False
         for i, input in enumerate(data_loader):
             if i % cfg['step_period'] == 0 and cfg['profile']:
                 logger.profiler.step()
-            input_size = len(input[list(input.keys())[0]])
+            input_size = len(input['numeric']['data'])
             input = to_device(input, cfg['device'])
             output = model(input)
             loss = 1 / cfg['step_period'] * output['loss']
@@ -149,7 +149,7 @@ def test(data_loader, model, logger, index, mode=None, verbose=False):
         model.train(False)
         num_steps = len(data_loader) if cfg['eval']['num_steps'] == -1 else cfg['eval']['num_steps']
         for i, input in enumerate(data_loader):
-            input_size = len(input[list(input.keys())[0]])
+            input_size = len(input['numeric']['data'])
             input = to_device(input, cfg['device'])
             output = model(input)
             if mode is None or mode == 'batch':

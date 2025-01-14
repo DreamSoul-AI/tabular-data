@@ -56,16 +56,16 @@ def to_device(input, device):
     return output
 
 
-def gather_input(data_loader):
-    input = {}
-    for i, input_i in enumerate(data_loader):
-        for key, value in input_i.items():
-            if key not in input:
-                input[key] = []
-            input[key].append(value)
-    for key in input:
-        input[key] = torch.cat(input[key], dim=0)
-    return input
+# def gather_input(data_loader):
+#     input = {}
+#     for i, input_i in enumerate(data_loader):
+#         for key, value in input_i.items():
+#             if key not in input:
+#                 input[key] = []
+#             input[key].append(value)
+#     for key in input:
+#         input[key] = torch.cat(input[key], dim=0)
+#     return input
 
 
 def tree():
