@@ -13,8 +13,6 @@ def process_control():
         cfg['batch_size'] = 256
     elif cfg['data_mode'] == 'semantic':
         cfg['batch_size'] = 2
-    elif cfg['data_mode'] == 'encoder-embedding':
-        cfg['batch_size'] = 2
     else:
         raise ValueError('Not valid data mode')
     cfg['step_period'] = 1
@@ -22,7 +20,7 @@ def process_control():
     cfg['eval_period'] = 30
     cfg['eval'] = {}
     cfg['eval']['num_steps'] = 30
-    cfg['num_epochs'] = 3
+    # cfg['num_epochs'] = 3
     cfg['collate_mode'] = 'dict'
 
     cfg['model'] = {}
@@ -31,7 +29,7 @@ def process_control():
     cfg['model']['linear'] = {}
     cfg['model']['mlp'] = {'hidden_size': 128, 'scale_factor': 0.5, 'num_layers': 2, 'activation': 'relu'}
     cfg['model']['kan'] = {'hidden_size': [128, 64]}
-    cfg['model']['ridge'] = {'regularization': 1}
+    cfg['model']['ridge'] = {'regularization': 1e-3}
     cfg['model']['ann'] = {'hidden_size': (128, 64), 'solver': 'adam'}
     if 'make_stats' not in cfg:
         cfg['model']['stats'] = make_stats(
@@ -39,8 +37,8 @@ def process_control():
     cfg['model']['data_mode'] = cfg['data_mode']
     if cfg['data_name'] in ['CalHousingR']:
         cfg['model']['task_mode'] = 'regression'
-    elif cfg['data_name'] in ['Bank', 'Blood', 'CalHousingC', 'Car', 'CreditG', 'Diabetes',
-                              'Heart', 'Income', 'Jungle']:
+    elif cfg['data_name'] in ['Bank', 'Blood', 'CalHousingC', 'Car', 'CreditG', 'Diabetes', 'Heart', 'Income',
+                              'Jungle']:
         cfg['model']['task_mode'] = 'classification'
     else:
         raise ValueError('Not valid dataset name')

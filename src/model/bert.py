@@ -13,15 +13,17 @@ def bert(cfg):
     cache_tokenizer_path = os.path.join(cache_dir, bert_model_name, 'tokenizer')
     cache_config_path = os.path.join(cache_dir, bert_model_name, 'config')
     cache_model_path = os.path.join(cache_dir, bert_model_name, 'model')
-    if not os.path.exists(os.path.join(cache_dir, bert_model_name)):
-        local_files_only = False
-    else:
-        local_files_only = True
+    local_files_only = {'tokenizer': True, 'config': True, 'model': True}
+    if not os.path.exists(os.path.join(cache_dir, cache_tokenizer_path)):
+        local_files_only['tokenizer'] = False
+        local_files_only['config'] = False
+        local_files_only['model'] = False
     tokenizer = AutoTokenizer.from_pretrained(bert_model_name, trust_remote_code=True,
-                                              cache_dir=cache_tokenizer_path, local_files_only=local_files_only)
+                                              cache_dir=cache_tokenizer_path,
+                                              local_files_only=local_files_only['tokenizer'])
     config = AutoConfig.from_pretrained(bert_model_name, trust_remote_code=True,
-                                        cache_dir=cache_config_path, local_files_only=local_files_only)
-    model = AutoModel.from_pretrained(bert_model_name, trust_remote_code=True,
-                                      cache_dir=cache_model_path, config=config, local_files_only=local_files_only)
+                                        cache_dir=cache_config_path, local_files_only=local_files_only['config'])
+    model = AutoModel.from_pretrained(bert_model_name, trust_remote_code=True, config=config,
+                                      cache_dir=cache_model_path, local_files_only=local_files_only['model'])
     cfg['target_size'] = tokenizer.vocab_size
     return model, tokenizer
