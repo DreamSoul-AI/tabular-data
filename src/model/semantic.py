@@ -58,14 +58,7 @@ class Semantic(nn.Module):
         self.task_mode = 'classification'
         self.hidden_size = core.config.hidden_size
         self.target_size = tokenizer.vocab_size
-        self.pos_embedding = RopePositionEmbedding(self.hidden_size, max_len=cfg['max_length'])
-        # self.adapter = nn.Linear(self.hidden_size, self.hidden_size)
-        # self.out_proj = nn.Linear(self.hidden_size, tokenizer.vocab_size, bias=False)
-        # for param_name, param in self.core.named_parameters():
-        #     if 'word_embeddings' in param_name:
-        #         self.out_proj.weight = param
-        #         self.out_proj.weight.requires_grad = False
-        #         break
+        # self.pos_embedding = RopePositionEmbedding(self.hidden_size, max_len=cfg['max_length'])
         self.out_proj = nn.Linear(self.hidden_size, self.target_size)
 
     def freeze(self, model):
@@ -75,13 +68,12 @@ class Semantic(nn.Module):
 
     def forward(self, input):
         output = {}
-        input, target, target_weight = self.make_target(input)
+        input, target, target_weight = self.make_target(input['semantic'])
         input, sequence_length = self.flatten(input)
         valid_input = filter_args(self.core.forward, input)
         with torch.no_grad():
             x = self.core(**valid_input)
         x = x.last_hidden_state.detach()
-        # x = self.adapter(x)
         output['pred'], output['pred_semantic'], output['pred_numeric'] = self.make_pred(x, sequence_length)
         input['target'] = target
         # print(input['target'])
@@ -93,21 +85,21 @@ class Semantic(nn.Module):
         return output
 
     def make_target(self, input):
-        if self.cfg['mask_mode'] == 'target':
-            target = input['input_ids'][:, -1].clone().detach()
-            target_semantic = self.tokenizer.batch_decode(target, skip_special_tokens=True)
-            print('target', target)
-            print('target', target_semantic)
-            target_weight = target.new_zeros((self.target_size,), dtype=torch.float)
-            unique_target, unique_counts = torch.unique(target, return_counts=True)
-            unique_freq = 1 / unique_counts
-            target_weight[unique_target] = unique_freq / unique_freq.sum()
-            # print(target_weight[unique_target])
-            # exit()
-            input['input_ids'][:, -1][:] = self.tokenizer.mask_token_id
-            input['attention_mask'][:, -1][:] = 1
-        else:
-            raise ValueError('Not valid mask mode')
+        ## TODO: size is [256, 34, 8], need generate attention mask so that the last token is not attended
+        ## and the second last token output should be directed to output the last token (the column name is the query)
+        ## use the word embeddings only from the bert model and then write another attention module with the new mask
+        ## or use the new mask in the bert model encoder
+        ## need a projection layer to project 8 * bert_embedding_size to embedding
+        print(input['input_ids'].size(), input['attention_mask'].size(), input['attention_mask'].size())
+        exit()
+        # target = input['input_ids'][:, -1].clone().detach()
+        # target_semantic = self.tokenizer.batch_decode(target, skip_special_tokens=True)
+        # target_weight = target.new_zeros((self.target_size,), dtype=torch.float)
+        # unique_target, unique_counts = torch.unique(target, return_counts=True)
+        # unique_freq = 1 / unique_counts
+        # target_weight[unique_target] = unique_freq / unique_freq.sum()
+        # input['input_ids'][:, -1][:] = self.tokenizer.mask_token_id
+        # input['attention_mask'][:, -1][:] = 1
         return input, target, target_weight
 
     def flatten(self, input):
