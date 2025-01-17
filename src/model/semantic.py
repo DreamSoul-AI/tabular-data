@@ -68,7 +68,9 @@ class Semantic(nn.Module):
 
     def forward(self, input):
         output = {}
-        input, target, target_weight = self.make_target(input['semantic'])
+        self.make_attention_mask(input['semantic'])
+
+        # input, target, target_weight = self.make_target(input['semantic'])
         input, sequence_length = self.flatten(input)
         valid_input = filter_args(self.core.forward, input)
         with torch.no_grad():
@@ -84,13 +86,31 @@ class Semantic(nn.Module):
         output['pred'] = output['pred_numeric']
         return output
 
-    def make_target(self, input):
+    def make_attention_mask(self, input):
         ## TODO: size is [256, 34, 8], need generate attention mask so that the last token is not attended
         ## and the second last token output should be directed to output the last token (the column name is the query)
         ## use the word embeddings only from the bert model and then write another attention module with the new mask
         ## or use the new mask in the bert model encoder
         ## need a projection layer to project 8 * bert_embedding_size to embedding
-        print(input['input_ids'].size(), input['attention_mask'].size(), input['attention_mask'].size())
+        # print(input['input_ids'].size(), input['attention_mask'].size(), input['attention_mask'].size())
+        S = input['input_ids'].size(1)
+        # S = 8
+        mask = input['input_ids'].new_zeros((S, S), dtype=torch.float)
+        n = S // 2
+        for i in range(n):
+            # Feature name f_i can attend to all positions except v_i
+            mask[2 * i, :] = 0
+            # f_i cannot attend to its own value v_i
+            mask[2 * i, 2 * i + 1] = -float('inf')
+            mask[2 * i + 1, :] = -float('inf')
+            mask[2 * i + 1, 2 * i + 1] = 0
+        print(input['attention_mask']) # TODO: merge with the above mask for padding -> (34, 34, 8)
+        print(mask)
+        exit()
+        # For each value v_i, allow it to attend only to its corresponding feature f_i
+        for i in range(n):
+            mask[2 * i + 1, 2 * i] = 1  # v_i can only attend to f_i
+
         exit()
         # target = input['input_ids'][:, -1].clone().detach()
         # target_semantic = self.tokenizer.batch_decode(target, skip_special_tokens=True)
