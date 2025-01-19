@@ -95,31 +95,21 @@ class Semantic(nn.Module):
         # print(input['input_ids'].size(), input['attention_mask'].size(), input['attention_mask'].size())
         S = input['input_ids'].size(1)
         # S = 8
-        mask = input['input_ids'].new_zeros((S, S), dtype=torch.float)
+        feature_mask = input['input_ids'].new_zeros((S, S), dtype=torch.long)
         n = S // 2
         for i in range(n):
             # Feature name f_i can attend to all positions except v_i
-            mask[2 * i, :] = 0
+            feature_mask[2 * i, :] = 1
             # f_i cannot attend to its own value v_i
-            mask[2 * i, 2 * i + 1] = -float('inf')
-            mask[2 * i + 1, :] = -float('inf')
-            mask[2 * i + 1, 2 * i + 1] = 0
-        print(input['attention_mask']) # TODO: merge with the above mask for padding -> (34, 34, 8)
-        print(mask)
+            feature_mask[2 * i, 2 * i + 1] = 0
+            feature_mask[2 * i + 1, :] = 0
+            feature_mask[2 * i + 1, 2 * i + 1] = 1
+        feature_mask = feature_mask.unsqueeze(-1)
+        attention_mask = input['attention_mask'].unsqueeze(1)
+        mask = torch.logical_and(feature_mask, attention_mask)
         exit()
-        # For each value v_i, allow it to attend only to its corresponding feature f_i
-        for i in range(n):
-            mask[2 * i + 1, 2 * i] = 1  # v_i can only attend to f_i
-
-        exit()
-        # target = input['input_ids'][:, -1].clone().detach()
-        # target_semantic = self.tokenizer.batch_decode(target, skip_special_tokens=True)
-        # target_weight = target.new_zeros((self.target_size,), dtype=torch.float)
-        # unique_target, unique_counts = torch.unique(target, return_counts=True)
-        # unique_freq = 1 / unique_counts
-        # target_weight[unique_target] = unique_freq / unique_freq.sum()
-        # input['input_ids'][:, -1][:] = self.tokenizer.mask_token_id
-        # input['attention_mask'][:, -1][:] = 1
+        # TODO: input_ids (256, 34, 8) -> (256, 34, 8, D) -> (256, 34, 8 * D) -> (256, 34, 128) [N, S, D] use pretrained or customized embedding
+        # attention (256, 34, 34) -> attention-based model -> (256, 34, 128) -> (256, 34, 8 * D)- > (256, 34, 8, D) -> (256, 34, 8) -> decode
         return input, target, target_weight
 
     def flatten(self, input):
