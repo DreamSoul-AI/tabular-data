@@ -2,7 +2,7 @@
 # control
 control:
   data_name: Bank
-  data_mode: numeric
+  data_mode: semantic
   eval_mode: 0.9-holdout
   model_name: bert
   num_shots: -1

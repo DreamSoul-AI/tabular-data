@@ -56,8 +56,11 @@ class Semantic(nn.Module):
         self.index = index
         self.cfg = cfg
         self.task_mode = 'classification'
-        self.hidden_size = core.config.hidden_size
+        self.encode_length = cfg['encode_length']
+        self.hidden_size = cfg['bert']['hidden_size']
         self.target_size = tokenizer.vocab_size
+        # TODO: use data embedding
+        self.in_proj = nn.Linear(self.core.config.hidden_size * self.encode_length, self.hidden_size)
         # self.pos_embedding = RopePositionEmbedding(self.hidden_size, max_len=cfg['max_length'])
         self.out_proj = nn.Linear(self.hidden_size, self.target_size)
 
@@ -66,16 +69,23 @@ class Semantic(nn.Module):
             param.requires_grad = False
         return
 
+    def encode(self, input):
+        sequence_length = input['input_ids'].size(1)
+        input_ids = input['input_ids'].view(-1, input['input_ids'].size(-1))
+        attention_mask = input['attention_mask'].view(-1, input['attention_mask'].size(-1))
+        encoder_input = {'input_ids': input_ids, 'attention_mask': attention_mask}
+        with torch.no_grad():
+            x = self.core(**encoder_input)
+            x = x.last_hidden_state.detach()
+        x = x.view(-1, sequence_length, *x.shape[1:])
+        x = x.view(*x.shape[:2], -1)
+        x = self.in_proj(x)
+        return x
+
     def forward(self, input):
         output = {}
-        self.make_attention_mask(input['semantic'])
-
-        # input, target, target_weight = self.make_target(input['semantic'])
-        input, sequence_length = self.flatten(input)
-        valid_input = filter_args(self.core.forward, input)
-        with torch.no_grad():
-            x = self.core(**valid_input)
-        x = x.last_hidden_state.detach()
+        feature_mask = self.make_feature_mask(input['semantic'])
+        x = self.encode(input['semantic'])
         output['pred'], output['pred_semantic'], output['pred_numeric'] = self.make_pred(x, sequence_length)
         input['target'] = target
         # print(input['target'])
@@ -86,17 +96,17 @@ class Semantic(nn.Module):
         output['pred'] = output['pred_numeric']
         return output
 
-    def make_attention_mask(self, input):
+    def make_feature_mask(self, input):
         ## TODO: size is [256, 34, 8], need generate attention mask so that the last token is not attended
         ## and the second last token output should be directed to output the last token (the column name is the query)
         ## use the word embeddings only from the bert model and then write another attention module with the new mask
         ## or use the new mask in the bert model encoder
         ## need a projection layer to project 8 * bert_embedding_size to embedding
         # print(input['input_ids'].size(), input['attention_mask'].size(), input['attention_mask'].size())
-        S = input['input_ids'].size(1)
+        sequence_length = input['input_ids'].size(1)
         # S = 8
-        feature_mask = input['input_ids'].new_zeros((S, S), dtype=torch.long)
-        n = S // 2
+        feature_mask = input['input_ids'].new_zeros((sequence_length, sequence_length), dtype=torch.long)
+        n = sequence_length // 2
         for i in range(n):
             # Feature name f_i can attend to all positions except v_i
             feature_mask[2 * i, :] = 1
@@ -104,19 +114,14 @@ class Semantic(nn.Module):
             feature_mask[2 * i, 2 * i + 1] = 0
             feature_mask[2 * i + 1, :] = 0
             feature_mask[2 * i + 1, 2 * i + 1] = 1
-        feature_mask = feature_mask.unsqueeze(-1)
-        attention_mask = input['attention_mask'].unsqueeze(1)
-        mask = torch.logical_and(feature_mask, attention_mask)
-        exit()
+        # feature_mask = feature_mask.unsqueeze(-1)
+        # attention_mask = input['attention_mask'].unsqueeze(1)
+        # mask = torch.logical_and(feature_mask, attention_mask)
+        # exit()
         # TODO: input_ids (256, 34, 8) -> (256, 34, 8, D) -> (256, 34, 8 * D) -> (256, 34, 128) [N, S, D] use pretrained or customized embedding
         # attention (256, 34, 34) -> attention-based model -> (256, 34, 128) -> (256, 34, 8 * D)- > (256, 34, 8, D) -> (256, 34, 8) -> decode
-        return input, target, target_weight
-
-    def flatten(self, input):
-        sequence_length = input['input_ids'].size(1)
-        input['input_ids'] = input['input_ids'].view(-1, input['input_ids'].size(-1))
-        input['attention_mask'] = input['attention_mask'].view(-1, input['attention_mask'].size(-1))
-        return input, sequence_length
+        # return input, target, target_weight
+        return feature_mask
 
     def make_pred(self, hidden_state, sequence_length):
         if self.cfg['mask_mode'] == 'target':

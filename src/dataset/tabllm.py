@@ -91,13 +91,9 @@ class TabLLM(Dataset):
         raise NotImplementedError
 
     def transform_semantic_data(self, data):
-        max_length = cfg['model']['max_length']
-        # seq_length = 2 * (len(self.feature_names) + len(self.target_names))
-
+        max_length = cfg['model']['encode_length']
         data = self.tokenizer(data, return_tensors="pt", padding='max_length',
                               max_length=max_length, truncation=True)
-        # data['input_ids'] = data['input_ids'].view(-1, seq_length, max_length)
-        # data['attention_mask'] = data['attention_mask'].view(-1, seq_length, max_length)
         return data
 
 
