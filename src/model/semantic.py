@@ -51,6 +51,8 @@ class Semantic(nn.Module):
     def __init__(self, core, tokenizer, cfg, index):
         super().__init__()
         self.core = core
+        self.data_embedding = self.core.embeddings.word_embeddings
+        self.padding_idx = self.data_embedding.padding_idx
         self.freeze(self.core)
         self.tokenizer = tokenizer
         self.index = index
@@ -62,39 +64,12 @@ class Semantic(nn.Module):
         # TODO: use data embedding
         self.in_proj = nn.Linear(self.core.config.hidden_size * self.encode_length, self.hidden_size)
         # self.pos_embedding = RopePositionEmbedding(self.hidden_size, max_len=cfg['max_length'])
-        self.out_proj = nn.Linear(self.hidden_size, self.target_size)
+        self.out_proj = nn.Linear(self.hidden_size, self.core.config.hidden_size * self.encode_length)
 
     def freeze(self, model):
         for param in model.parameters():
             param.requires_grad = False
         return
-
-    def encode(self, input):
-        sequence_length = input['input_ids'].size(1)
-        input_ids = input['input_ids'].view(-1, input['input_ids'].size(-1))
-        attention_mask = input['attention_mask'].view(-1, input['attention_mask'].size(-1))
-        encoder_input = {'input_ids': input_ids, 'attention_mask': attention_mask}
-        with torch.no_grad():
-            x = self.core(**encoder_input)
-            x = x.last_hidden_state.detach()
-        x = x.view(-1, sequence_length, *x.shape[1:])
-        x = x.view(*x.shape[:2], -1)
-        x = self.in_proj(x)
-        return x
-
-    def forward(self, input):
-        output = {}
-        feature_mask = self.make_feature_mask(input['semantic'])
-        x = self.encode(input['semantic'])
-        output['pred'], output['pred_semantic'], output['pred_numeric'] = self.make_pred(x, sequence_length)
-        input['target'] = target
-        # print(input['target'])
-        # exit()
-        # output['loss'] = make_loss(output, input, mode=self.task_mode, log_prob=False)
-        output['loss'] = F.cross_entropy(output['pred'], input['target'], reduction='mean', weight=target_weight)
-        input['target'] = input['target_numeric']
-        output['pred'] = output['pred_numeric']
-        return output
 
     def make_feature_mask(self, input):
         ## TODO: size is [256, 34, 8], need generate attention mask so that the last token is not attended
@@ -123,24 +98,46 @@ class Semantic(nn.Module):
         # return input, target, target_weight
         return feature_mask
 
-    def make_pred(self, hidden_state, sequence_length):
-        if self.cfg['mask_mode'] == 'target':
-            hidden_state = hidden_state.view(-1, sequence_length, self.cfg['max_length'], hidden_state.size(-1))
-            # hidden_state = hidden_state[:, -1]
-            hidden_state = hidden_state.mean(dim=1)
-            hidden_state = self.pos_embedding(hidden_state)
-            # hidden_state = torch.cumsum(hidden_state, dim=1)  # pos embedding
-        pred = self.out_proj(hidden_state)
-        pred = pred.transpose(1, 2)
-        # print(pred.size())
+    def encode(self, input, sequence_length):
+        input_ids = input['input_ids'].view(-1, input['input_ids'].size(-1))
+        attention_mask = input['attention_mask'].view(-1, input['attention_mask'].size(-1))
+        encoder_input = {'input_ids': input_ids, 'attention_mask': attention_mask}
+        with torch.no_grad():
+            # x = self.core(**encoder_input)
+            # x = x.last_hidden_state.detach()
+            print(input_ids[0])
+            x = self.data_embedding(input_ids)
+        print(x.size())
+        exit()
+        x = x.view(-1, sequence_length, *x.shape[1:])
+        x = x.view(*x.shape[:2], -1)
+        return x
+
+    def decode(self, input, sequence_length):
+        x = input.view(input.size(0), sequence_length, self.encode_length, -1)
+        hidden_state = self.pos_embedding(hidden_state)
         pred_tokens = torch.argmax(pred, dim=1)
-        # print(pred_tokens)
-        # print(pred_tokens.size())
-        pred_semantic = self.tokenizer.batch_decode(pred_tokens, skip_special_tokens=True)
-        pred_numeric = [self.classes_to_labels.get(pred_semantic[i], -1) for i in range(len(pred_semantic))]
-        pred_numeric = hidden_state.new_tensor(pred_numeric, dtype=torch.long)
-        print('pred', pred_semantic)
-        return pred, pred_semantic, pred_numeric
+        return x
+
+    def forward(self, input):
+        output = {}
+        sequence_length = input['semantic']['input_ids'].size(1)
+        feature_mask = self.make_feature_mask(input['semantic'])
+        x = self.encode(input['semantic'], sequence_length)
+        x = self.in_proj(x)
+        # x = self.model(x)
+        x = self.out_proj(x)
+        print(x.size())
+        x = self.decode(x, sequence_length)
+        print(x.size())
+        exit()
+        # print(input['target'])
+        # exit()
+        # output['loss'] = make_loss(output, input, mode=self.task_mode, log_prob=False)
+        output['loss'] = F.cross_entropy(output['pred'], input['target'], reduction='mean', weight=target_weight)
+        input['target'] = input['target_numeric']
+        output['pred'] = output['pred_numeric']
+        return output
 
 
 def semantic(core, tokenizer, cfg, index):
